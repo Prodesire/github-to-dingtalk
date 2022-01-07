@@ -1,0 +1,30 @@
+edition: 1.0.0
+name: github-notification
+access: 'default'
+services:
+  github-notification:
+    component: devsapp/fc
+    props:
+      region: cn-beijing
+      service:
+        internetAccess: true
+        name: github-notification
+      function:
+        environmentVariables: {}
+        handler: index.handler
+        instanceConcurrency: 1
+        instanceType: e1
+        memorySize: 128
+        runtime: python3.9
+        timeout: 60
+        name: dingtalk
+        asyncConfiguration: {}
+        codeUri: ./notification
+      triggers:
+        - name: defaultTrigger
+          type: http
+          config:
+            methods:
+              - GET
+              - POST
+            authType: anonymous

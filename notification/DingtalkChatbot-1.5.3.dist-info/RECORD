@@ -1,0 +1,16 @@
+DingtalkChatbot-1.5.3.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
+DingtalkChatbot-1.5.3.dist-info/METADATA,sha256=wK5rqMFp3CPUjndwllNQknfyOC2yYbj8xWaAJoL--yc,10400
+DingtalkChatbot-1.5.3.dist-info/RECORD,,
+DingtalkChatbot-1.5.3.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
+DingtalkChatbot-1.5.3.dist-info/WHEEL,sha256=ADKeyaGyKF5DwBNE0sRE5pvW-bSkFMJfBuhzZ3rceP4,110
+DingtalkChatbot-1.5.3.dist-info/top_level.txt,sha256=2Tx3GWdAVGP6_qLP4kJYZwyqbBos8aVLuFpzswKDPM4,16
+dingtalkchatbot/__about__.py,sha256=ivE1rvGJkb_wMdcoxplZ_vNZDvRhO4nUG9uUMoLYph0,306
+dingtalkchatbot/__init__.py,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
+dingtalkchatbot/__pycache__/__about__.cpython-310.pyc,,
+dingtalkchatbot/__pycache__/__init__.cpython-310.pyc,,
+dingtalkchatbot/__pycache__/chatbot.cpython-310.pyc,,
+dingtalkchatbot/__pycache__/chatbot_test.cpython-310.pyc,,
+dingtalkchatbot/__pycache__/samples.cpython-310.pyc,,
+dingtalkchatbot/chatbot.py,sha256=Hi-Ss8dlDFf90FOr_Dqc5C6pgEUEGAdH4PDbiYGyrCc,20405
+dingtalkchatbot/chatbot_test.py,sha256=oGTjmxGRvQC8zON8BLWnHSLQLHGlUNAQUlNVPZatEPw,6785
+dingtalkchatbot/samples.py,sha256=2xtC0F68qttNJcDKGwIEjtqWjkRnTQJ8OJ3fWtqXXCk,6332
