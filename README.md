@@ -28,6 +28,7 @@ $ s github-notification deploy
 
 ### 支持的WebHook事件
 
+- discussion/discussion_comment
 - fork
 - issue_comment/issues
 - pull_request/pull_request_review/pull_request_review_comment
@@ -67,6 +68,7 @@ $ s github-notification deploy
 
 ### Supported WebHook events
 
+- discussion/discussion_comment
 - fork
 - issue_comment/issues
 - pull_request/pull_request_review/pull_request_review_comment

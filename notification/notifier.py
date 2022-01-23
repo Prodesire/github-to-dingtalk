@@ -34,6 +34,8 @@ class DingTalkNotifier(object):
             self._notify_star()
         elif 'forkee' in self.payload:
             self._notify_fork()
+        elif 'discussion' in self.payload:
+            self._notify_discussion()
 
     def _notify_pull_request(self):
         pr = self.payload['pull_request']
@@ -145,3 +147,27 @@ class DingTalkNotifier(object):
             text=f'{self._md_sender} forked {md_fork} from {self._md_repo}️\n\n'
                  f'⭐️{self.repo_star_count}'
         )
+
+    def _notify_discussion(self):
+        discussion = self.payload['discussion']
+        discussion_page = discussion['html_url']
+        discussion_number = discussion['number']
+        discussion_title = discussion['title']
+        discussion_body = discussion['body'] or ''
+        comment = self.payload.get('comment')
+        if comment:
+            comment_page = comment['html_url']
+            comment_body = comment['body'] or ''
+            self.bot.send_markdown(
+                title='Discussion Comment',
+                text=f'{self._md_sender} has {self.action} an discussion comment {self.action_prep} {self._md_repo}\n\n'
+                     f'[#{discussion_number} {discussion_title}]({comment_page})\n\n'
+                     f'> {comment_body}'
+            )
+        else:
+            self.bot.send_markdown(
+                title='Discussion',
+                text=f'{self._md_sender} has {self.action} an discussion {self.action_prep} {self._md_repo}\n\n'
+                     f'[#{discussion_number} {discussion_title}]({discussion_page})\n\n'
+                     f'> {discussion_body}'
+            )
