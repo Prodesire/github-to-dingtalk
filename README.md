@@ -35,6 +35,9 @@ $ s github-notification deploy
 - push
 - star
 
+### 截图
+![](github-notifier-snapshot.jpg)
+
 ### 许可
 
 [MIT](LICENSE)
@@ -74,6 +77,9 @@ $ s github-notification deploy
 - pull_request/pull_request_review/pull_request_review_comment
 - push
 - star
+
+### Snapshot
+![](github-notifier-snapshot.jpg)
 
 ### License
 
