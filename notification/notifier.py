@@ -1,7 +1,10 @@
 import logging
 
-import conf
 from dingtalkchatbot.chatbot import DingtalkChatbot
+try:
+    import conf_overwrite as conf
+except ImportError:
+    import conf
 
 
 class DingTalkNotifier(object):

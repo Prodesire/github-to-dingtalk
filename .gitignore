@@ -133,3 +133,6 @@ dmypy.json
 
 # FC
 .s/
+
+# Projects
+notification/conf_overwrite.py
