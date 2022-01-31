@@ -26,7 +26,7 @@ $ s github-notification deploy
 - 访问 [FC控制台](https://fcnext.console.aliyun.com/cn-beijing/services/github-notification/function-detail/dingtalk/LATEST?tab=trigger)
 获取公网访问地址，将之作为GitHub仓库的WebHook。
 
-### 支持的WebHook事件
+### 支持的[WebHook事件](https://docs.github.com/en/developers/webhooks-and-events/webhooks/webhook-events-and-payloads)
 
 - discussion/discussion_comment
 - fork
@@ -69,7 +69,7 @@ $ s github-notification deploy
 - Visit the [FC console](https://fcnext.console.aliyun.com/cn-beijing/services/github-notification/function-detail/dingtalk/LATEST?tab=trigger)
   to obtain the public network access address, and use it as the WebHook of the GitHub repository.
 
-### Supported WebHook events
+### Supported [WebHook events](https://docs.github.com/en/developers/webhooks-and-events/webhooks/webhook-events-and-payloads)
 
 - discussion/discussion_comment
 - fork
