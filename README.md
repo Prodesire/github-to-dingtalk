@@ -34,6 +34,7 @@ $ s github-notification deploy
 - pull_request/pull_request_review/pull_request_review_comment
 - push
 - star
+- watch
 
 ### 截图
 ![](github-notifier-snapshot.jpg)
@@ -77,6 +78,7 @@ $ s github-notification deploy
 - pull_request/pull_request_review/pull_request_review_comment
 - push
 - star
+- watch
 
 ### Snapshot
 ![](github-notifier-snapshot.jpg)

@@ -39,6 +39,8 @@ class DingTalkNotifier(object):
             self._notify_fork()
         elif 'discussion' in self.payload:
             self._notify_discussion()
+        elif self.action == 'started':
+            self._notify_watch()
 
     def _notify_pull_request(self):
         pr = self.payload['pull_request']
@@ -174,3 +176,11 @@ class DingTalkNotifier(object):
                      f'[#{discussion_number} {discussion_title}]({discussion_page})\n\n'
                      f'> {discussion_body}'
             )
+
+    def _notify_watch(self):
+        watchers = self.repo['watchers_count']
+        self.bot.send_markdown(
+            title='Watch',
+            text=f'{self._md_sender} watched {self._md_repo}\n\n'
+                 f'Watcheres: ️{watchers}'
+        )
