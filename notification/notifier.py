@@ -96,7 +96,7 @@ class DingTalkNotifier(object):
             md_file_changes = 'File Changes:' + md_file_changes
 
         self.bot.send_markdown(
-            title='Issue Comment',
+            title='Push',
             text=f'{self._md_sender} has pushed commit(s) {self.action_prep} {self._md_repo}\n\n'
                  f'[#{commit_id}]({commit_page})\n\n'
                  f'> {commit_message}\n\n'
