@@ -5,7 +5,7 @@ services:
   github-notification:
     component: devsapp/fc
     props:
-      region: cn-beijing
+      region: cn-beijinga
       service:
         internetAccess: true
         name: github-notification
