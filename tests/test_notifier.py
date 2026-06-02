@@ -139,7 +139,7 @@ def test_notify_release(mock_bot_cls: MagicMock):
 
 
 @patch("github_to_dingtalk.notifier.DingtalkChatbot")
-def test_notify_unknown_event(mock_bot_cls: MagicMock):
+def test_notify_unrouted_event(mock_bot_cls: MagicMock):
     config = _make_config(
         routes=[
             RouteConfig(
@@ -150,6 +150,10 @@ def test_notify_unknown_event(mock_bot_cls: MagicMock):
         ]
     )
     notifier = DingTalkNotifier(config)
-    payload = {"some_unknown_key": True, "repository": REPO_FIELDS}
-    notifier.notify(payload, "push")
+    payload = {
+        "sender": SENDER_FIELDS,
+        "repository": REPO_FIELDS,
+        "action": "created",
+    }
+    notifier.notify(payload, "star")
     mock_bot_cls.assert_not_called()
