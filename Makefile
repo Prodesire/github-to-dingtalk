@@ -4,8 +4,10 @@
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}'
 
-install: ## Install dependencies
+install: ## Install dependencies and git hooks
 	uv sync
+	cp hooks/pre-commit .git/hooks/pre-commit
+	chmod +x .git/hooks/pre-commit
 
 dev: ## Start dev server with hot reload
 	uv run uvicorn github_to_dingtalk.app:app --host 0.0.0.0 --port 9000 --reload

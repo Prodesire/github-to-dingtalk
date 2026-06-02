@@ -10,7 +10,6 @@ class MetaHandler(BaseHandler):
         return Message(
             title="Meta",
             text=(
-                f"Webhook {hook_id} {self.action} in {self.md_repo}\n\n"
-                f"Events: {events}"
+                f"Webhook {hook_id} {self.action} in {self.md_repo}\n\nEvents: {events}"
             ),
         )

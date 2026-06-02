@@ -147,9 +147,7 @@ class DingTalkNotifier:
             bot = DingtalkChatbot(group.webhook, group.secret)
             bot.send_markdown(title=message.title, text=message.text)
 
-    def _resolve_handler(
-        self, payload: dict, event_type: str
-    ) -> BaseHandler | None:
+    def _resolve_handler(self, payload: dict, event_type: str) -> BaseHandler | None:
         handler_cls = HANDLER_MAP.get(event_type)
         if handler_cls is not None:
             return handler_cls(payload)

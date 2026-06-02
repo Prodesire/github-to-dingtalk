@@ -16,7 +16,6 @@ class OrgBlockHandler(BaseHandler):
         return Message(
             title="Org Block",
             text=(
-                f"{self.md_sender} {self.action} {md_blocked}"
-                f" in organization {md_org}"
+                f"{self.md_sender} {self.action} {md_blocked} in organization {md_org}"
             ),
         )

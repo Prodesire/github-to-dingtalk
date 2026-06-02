@@ -12,7 +12,6 @@ class InstallationHandler(BaseHandler):
         return Message(
             title="Installation",
             text=(
-                f"App **{app_slug}** {self.action}"
-                f" for [{account_login}]({account_url})"
+                f"App **{app_slug}** {self.action} for [{account_login}]({account_url})"
             ),
         )

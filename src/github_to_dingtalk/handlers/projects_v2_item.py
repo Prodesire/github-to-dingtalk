@@ -8,8 +8,5 @@ class ProjectsV2ItemHandler(BaseHandler):
 
         return Message(
             title="Project Item",
-            text=(
-                f"{self.md_sender} {self.action} a"
-                f" {content_type} item in project"
-            ),
+            text=(f"{self.md_sender} {self.action} a {content_type} item in project"),
         )

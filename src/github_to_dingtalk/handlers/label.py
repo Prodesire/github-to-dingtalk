@@ -8,8 +8,5 @@ class LabelHandler(BaseHandler):
 
         return Message(
             title="Label",
-            text=(
-                f"{self.md_sender} {self.action} label"
-                f" **{name}** in {self.md_repo}"
-            ),
+            text=(f"{self.md_sender} {self.action} label **{name}** in {self.md_repo}"),
         )

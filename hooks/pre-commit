@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -e
+
+FILES=$(git diff --cached --name-only --diff-filter=ACM -- '*.py')
+[ -z "$FILES" ] && exit 0
+
+uv run ruff format --check $FILES
+uv run ruff check $FILES
