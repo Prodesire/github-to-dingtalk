@@ -1,0 +1,19 @@
+dingtalk_groups:
+  dev-group:
+    webhook: "https://oapi.dingtalk.com/robot/send?access_token=YOUR_TOKEN_HERE"
+    secret: "YOUR_SECRET_HERE"
+  release-group:
+    webhook: "https://oapi.dingtalk.com/robot/send?access_token=YOUR_TOKEN_HERE"
+    secret: "YOUR_SECRET_HERE"
+
+routes:
+  - repo: "myorg/my-repo"
+    events: ["issues", "pull_request", "push"]
+    groups: ["dev-group"]
+  - repo: "myorg/my-repo"
+    events: ["release"]
+    groups: ["release-group"]
+
+# Optional: events not matching any route are sent to this group.
+# If not set, unmatched events are discarded.
+# default_group: "dev-group"

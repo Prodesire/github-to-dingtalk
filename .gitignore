@@ -147,6 +147,9 @@ dmypy.json
 .DS_Store
 Thumbs.db
 
+# Config
+config.yml
+
 # FC
 .s/
 

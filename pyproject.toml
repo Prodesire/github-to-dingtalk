@@ -12,7 +12,8 @@ requires-python = ">=3.13"
 dependencies = [
     "fastapi",
     "uvicorn",
-    "pydantic-settings",
+    "pydantic",
+    "pyyaml",
     "dingtalkchatbot",
 ]
 

@@ -1,15 +1,118 @@
 import os
+from pathlib import Path
 from unittest.mock import patch
 
-from github_to_dingtalk.config import Settings
+import pytest
+
+from github_to_dingtalk.config import load_config
 
 
-def test_settings_from_env():
-    env = {
-        "DINGTALK_WEBHOOK": "https://oapi.dingtalk.com/robot/send?access_token=test",
-        "DINGTALK_SECRET": "SECtest123",
-    }
-    with patch.dict(os.environ, env):
-        settings = Settings()
-        assert settings.dingtalk_webhook == env["DINGTALK_WEBHOOK"]
-        assert settings.dingtalk_secret == env["DINGTALK_SECRET"]
+@pytest.fixture
+def config_file(tmp_path: Path) -> Path:
+    content = """\
+dingtalk_groups:
+  dev-group:
+    webhook: "https://oapi.dingtalk.com/robot/send?access_token=aaa"
+    secret: "SECaaa"
+  release-group:
+    webhook: "https://oapi.dingtalk.com/robot/send?access_token=bbb"
+    secret: "SECbbb"
+
+routes:
+  - repo: "myorg/iac-code"
+    events: ["issues", "pull_request"]
+    groups: ["dev-group"]
+  - repo: "myorg/iac-code"
+    events: ["release"]
+    groups: ["release-group"]
+
+default_group: "dev-group"
+"""
+    p = tmp_path / "config.yml"
+    p.write_text(content)
+    return p
+
+
+def test_load_config(config_file: Path):
+    config = load_config(str(config_file))
+    assert "dev-group" in config.dingtalk_groups
+    assert "release-group" in config.dingtalk_groups
+    assert (
+        config.dingtalk_groups["dev-group"].webhook
+        == "https://oapi.dingtalk.com/robot/send?access_token=aaa"
+    )
+    assert config.dingtalk_groups["dev-group"].secret == "SECaaa"
+    assert len(config.routes) == 2
+    assert config.routes[0].repo == "myorg/iac-code"
+    assert config.routes[0].events == ["issues", "pull_request"]
+    assert config.routes[0].groups == ["dev-group"]
+    assert config.default_group == "dev-group"
+
+
+def test_load_config_no_default_group(tmp_path: Path):
+    content = """\
+dingtalk_groups:
+  dev-group:
+    webhook: "https://hook"
+    secret: "SEC123"
+
+routes:
+  - repo: "myorg/repo"
+    events: ["push"]
+    groups: ["dev-group"]
+"""
+    p = tmp_path / "config.yml"
+    p.write_text(content)
+    config = load_config(str(p))
+    assert config.default_group is None
+
+
+def test_load_config_invalid_group_reference(tmp_path: Path):
+    content = """\
+dingtalk_groups:
+  dev-group:
+    webhook: "https://hook"
+    secret: "SEC123"
+
+routes:
+  - repo: "myorg/repo"
+    events: ["push"]
+    groups: ["nonexistent-group"]
+"""
+    p = tmp_path / "config.yml"
+    p.write_text(content)
+    with pytest.raises(ValueError, match="nonexistent-group"):
+        load_config(str(p))
+
+
+def test_load_config_invalid_default_group(tmp_path: Path):
+    content = """\
+dingtalk_groups:
+  dev-group:
+    webhook: "https://hook"
+    secret: "SEC123"
+
+routes: []
+
+default_group: "nonexistent"
+"""
+    p = tmp_path / "config.yml"
+    p.write_text(content)
+    with pytest.raises(ValueError, match="nonexistent"):
+        load_config(str(p))
+
+
+def test_load_config_env_override(tmp_path: Path):
+    content = """\
+dingtalk_groups:
+  g1:
+    webhook: "https://hook"
+    secret: "SEC"
+
+routes: []
+"""
+    p = tmp_path / "config.yml"
+    p.write_text(content)
+    with patch.dict(os.environ, {"CONFIG_PATH": str(p)}):
+        config = load_config()
+        assert "g1" in config.dingtalk_groups

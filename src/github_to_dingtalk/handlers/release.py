@@ -1,0 +1,20 @@
+from github_to_dingtalk.handlers.base import BaseHandler, Message
+
+
+class ReleaseHandler(BaseHandler):
+    def build_message(self) -> Message:
+        release = self.payload["release"]
+        tag_name = release["tag_name"]
+        release_name = release.get("name") or tag_name
+        release_url = release["html_url"]
+        body = release.get("body") or ""
+        md_release = f"[{release_name}]({release_url})"
+
+        return Message(
+            title="Release",
+            text=(
+                f"{self.md_sender} {self.action} release {md_release}"
+                f" {self.action_prep} {self.md_repo}\n\n"
+                f"**Tag:** {tag_name}\n\n" + (f"> {body}\n\n" if body else "")
+            ),
+        )

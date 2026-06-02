@@ -1,6 +1,3 @@
--include .env
-export
-
 .DEFAULT_GOAL := help
 .PHONY: help install dev test lint format build deploy clean
 
@@ -11,11 +8,6 @@ install: ## Install dependencies
 	uv sync
 
 dev: ## Start dev server with hot reload
-	@if [ -z "$$DINGTALK_WEBHOOK" ] || [ -z "$$DINGTALK_SECRET" ]; then \
-		echo "\033[31mError: DINGTALK_WEBHOOK and DINGTALK_SECRET must be set\033[0m"; \
-		echo "Usage: Create .env file or run DINGTALK_WEBHOOK=<url> DINGTALK_SECRET=<key> make dev"; \
-		exit 1; \
-	fi
 	uv run uvicorn github_to_dingtalk.app:app --host 0.0.0.0 --port 9000 --reload
 
 test: ## Run tests
