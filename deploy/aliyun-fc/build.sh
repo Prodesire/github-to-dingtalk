@@ -8,6 +8,7 @@ rm -rf "$BUILD_DIR"
 mkdir -p "$BUILD_DIR"
 
 cp -r "$PROJECT_ROOT/src/github_to_dingtalk" "$BUILD_DIR/"
+cp "$PROJECT_ROOT/config.yml" "$BUILD_DIR/"
 uv export --no-dev --no-hashes -o "$BUILD_DIR/requirements.txt" --quiet
 uv pip install \
     -r "$BUILD_DIR/requirements.txt" \

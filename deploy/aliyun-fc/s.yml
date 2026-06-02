@@ -18,8 +18,6 @@ resources:
       internetAccess: true
       code: ../../build
       environmentVariables:
-        DINGTALK_WEBHOOK: ${env('DINGTALK_WEBHOOK')}
-        DINGTALK_SECRET: ${env('DINGTALK_SECRET')}
         PATH: /var/fc/lang/python3.13/bin:/var/fc/lang/nodejs22/bin:/usr/local/bin/apache-maven/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/ruby/bin:/opt/bin:/code:/code/bin
         PYTHONPATH: /opt/python:/code
         LD_LIBRARY_PATH: /code:/code/lib:/usr/lib:/opt/lib:/usr/local/lib

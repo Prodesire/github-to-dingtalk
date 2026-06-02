@@ -30,7 +30,8 @@ class DingTalkNotifier:
 
         repo: dict = payload.get("repository") or {}
         repo_name: str = repo.get("full_name", "")
-        groups = self._router.resolve(repo_name, event_type)
+        action: str | None = payload.get("action")
+        groups = self._router.resolve(repo_name, event_type, action)
         if not groups:
             logger.info("No target groups for repo=%s event=%s", repo_name, event_type)
             return

@@ -11,10 +11,8 @@ class ReleaseHandler(BaseHandler):
         md_release = f"[{release_name}]({release_url})"
 
         return Message(
-            title="Release",
+            title=release_name,
             text=(
-                f"{self.md_sender} {self.action} release {md_release}"
-                f" {self.action_prep} {self.md_repo}\n\n"
-                f"**Tag:** {tag_name}\n\n" + (f"> {body}\n\n" if body else "")
+                f"## [{release_name}]({release_url})\n\n" + (body + "\n\n" if body else "")
             ),
         )
