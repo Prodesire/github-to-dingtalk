@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2022 Aliyun.com All right reserved. This software is the
 # confidential and proprietary information of Aliyun.com ("Confidential
 # Information"). You shall not disclose such Confidential Information and shall

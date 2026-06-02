@@ -1,0 +1,45 @@
+edition: 3.0.0
+name: github-notification
+access: 'default'
+
+resources:
+  github-notification:
+    component: fc3
+    props:
+      region: ap-southeast-1
+      functionName: github-to-dingtalk
+      runtime: custom.debian12
+      handler: index.handler
+      memorySize: 128
+      cpu: 0.05
+      diskSize: 512
+      timeout: 60
+      instanceConcurrency: 1
+      internetAccess: true
+      code: ../../build
+      environmentVariables:
+        DINGTALK_WEBHOOK: ${env('DINGTALK_WEBHOOK')}
+        DINGTALK_SECRET: ${env('DINGTALK_SECRET')}
+        PATH: /var/fc/lang/python3.13/bin:/var/fc/lang/nodejs22/bin:/usr/local/bin/apache-maven/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/ruby/bin:/opt/bin:/code:/code/bin
+        PYTHONPATH: /opt/python:/code
+        LD_LIBRARY_PATH: /code:/code/lib:/usr/lib:/opt/lib:/usr/local/lib
+      customRuntimeConfig:
+        command:
+          - python3
+          - -m
+          - uvicorn
+          - github_to_dingtalk.app:app
+          - --host
+          - 0.0.0.0
+          - --port
+          - "80"
+        port: 80
+      triggers:
+        - triggerName: defaultTrigger
+          triggerType: http
+          triggerConfig:
+            methods:
+              - GET
+              - POST
+            authType: anonymous
+            disableURLInternet: false
