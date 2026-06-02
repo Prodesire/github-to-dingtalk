@@ -124,7 +124,7 @@ def test_notify_release(mock_bot_cls: MagicMock):
     payload = {
         "sender": SENDER_FIELDS,
         "repository": REPO_FIELDS,
-        "action": "published",
+        "action": "released",
         "release": {
             "tag_name": "v1.0.0",
             "name": "First Release",

@@ -12,10 +12,10 @@ PAYLOAD_BASE = {
 }
 
 
-def test_release_published():
+def test_release_released():
     payload = {
         **PAYLOAD_BASE,
-        "action": "published",
+        "action": "released",
         "release": {
             "tag_name": "v1.0.0",
             "name": "First Release",
@@ -30,10 +30,10 @@ def test_release_published():
     assert "Initial stable release" in msg.text
 
 
-def test_release_published_no_body():
+def test_release_released_no_body():
     payload = {
         **PAYLOAD_BASE,
-        "action": "published",
+        "action": "released",
         "release": {
             "tag_name": "v0.1.0",
             "name": "Beta",

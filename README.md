@@ -4,6 +4,13 @@ Forward GitHub webhook events to DingTalk group chat.
 
 [中文文档](README_zh.md)
 
+## Features
+
+- Route different events to different DingTalk groups
+- Support `event.action` routing (e.g., `release.published`)
+- YAML-based configuration with multi-group support
+- Deploy to Alibaba Cloud Function Compute
+
 ## Quick Start
 
 1. Install [uv](https://docs.astral.sh/uv/) and dependencies:
@@ -12,11 +19,26 @@ Forward GitHub webhook events to DingTalk group chat.
 make install
 ```
 
-2. Configure DingTalk robot (add a custom robot with "Signature" security setting):
+2. Create `config.yml` (see [config.example.yml](config.example.yml)):
 
-```shell
-export DINGTALK_WEBHOOK="https://oapi.dingtalk.com/robot/send?access_token=xxx"
-export DINGTALK_SECRET="SECxxx"
+```yaml
+dingtalk_groups:
+  dev-group:
+    webhook: "https://oapi.dingtalk.com/robot/send?access_token=YOUR_TOKEN"
+    secret: "YOUR_SECRET"
+  release-group:
+    webhook: "https://oapi.dingtalk.com/robot/send?access_token=YOUR_TOKEN"
+    secret: "YOUR_SECRET"
+
+routes:
+  - repo: "myorg/my-repo"
+    events: ["issues", "pull_request", "push"]
+    groups: ["dev-group"]
+  - repo: "myorg/my-repo"
+    events: ["release.released"]
+    groups: ["release-group"]
+
+# default_group: "dev-group"
 ```
 
 3. Install [Serverless Devs](https://docs.serverless-devs.com/) (`s` CLI) and deploy to Alibaba Cloud FC:
@@ -35,16 +57,6 @@ make test      # Run tests
 make lint      # Linting & type checking
 make format    # Format code
 ```
-
-## Supported Events
-
-- discussion / discussion_comment
-- fork
-- issues / issue_comment
-- pull_request / pull_request_review / pull_request_review_comment
-- push
-- star
-- watch
 
 ## Screenshot
 
