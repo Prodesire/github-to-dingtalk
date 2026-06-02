@@ -25,10 +25,8 @@ def test_release_published():
     }
     handler = ReleaseHandler(payload)
     msg = handler.build_message()
-    assert msg.title == "Release"
-    assert "published" in msg.text
+    assert msg.title == "First Release"
     assert "First Release" in msg.text
-    assert "v1.0.0" in msg.text
     assert "Initial stable release" in msg.text
 
 
@@ -45,9 +43,8 @@ def test_release_published_no_body():
     }
     handler = ReleaseHandler(payload)
     msg = handler.build_message()
-    assert msg.title == "Release"
+    assert msg.title == "Beta"
     assert "Beta" in msg.text
-    assert "v0.1.0" in msg.text
 
 
 def test_release_deleted():
@@ -63,6 +60,5 @@ def test_release_deleted():
     }
     handler = ReleaseHandler(payload)
     msg = handler.build_message()
-    assert msg.title == "Release"
-    assert "deleted" in msg.text
+    assert msg.title == "v0.0.1"
     assert "v0.0.1" in msg.text

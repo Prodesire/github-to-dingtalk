@@ -8,11 +8,10 @@ class ReleaseHandler(BaseHandler):
         release_name = release.get("name") or tag_name
         release_url = release["html_url"]
         body = release.get("body") or ""
-        md_release = f"[{release_name}]({release_url})"
-
         return Message(
             title=release_name,
             text=(
-                f"## [{release_name}]({release_url})\n\n" + (body + "\n\n" if body else "")
+                f"## [{release_name}]({release_url})\n\n"
+                + (body + "\n\n" if body else "")
             ),
         )

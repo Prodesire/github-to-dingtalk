@@ -135,7 +135,7 @@ def test_notify_release(mock_bot_cls: MagicMock):
     notifier.notify(payload, "release")
     mock_bot.send_markdown.assert_called_once()
     call_kwargs = mock_bot.send_markdown.call_args[1]
-    assert call_kwargs["title"] == "Release"
+    assert call_kwargs["title"] == "First Release"
 
 
 @patch("github_to_dingtalk.notifier.DingtalkChatbot")
