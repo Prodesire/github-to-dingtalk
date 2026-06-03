@@ -38,7 +38,7 @@ def test_projects_v2_closed():
         "projects_v2": {
             "title": "Sprint 1",
             "html_url": "https://github.com/orgs/octocat/projects/2",
-            "short_description": None,
+            "short_description": "First sprint",
             "number": 2,
         },
     }
@@ -47,3 +47,4 @@ def test_projects_v2_closed():
     assert msg.title == "Project"
     assert "closed" in msg.text
     assert "**Sprint 1**" in msg.text
+    assert "First sprint" not in msg.text

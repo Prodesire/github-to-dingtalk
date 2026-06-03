@@ -41,7 +41,7 @@ def test_milestone_closed():
         "action": "closed",
         "milestone": {
             "title": "v1.0",
-            "description": None,
+            "description": "First stable release",
             "html_url": "https://github.com/octocat/Hello-World/milestone/1",
             "state": "closed",
             "open_issues": 0,
@@ -55,3 +55,4 @@ def test_milestone_closed():
     assert "v1.0" in msg.text
     assert "Open: 0" in msg.text
     assert "Closed: 10" in msg.text
+    assert "First stable release" not in msg.text

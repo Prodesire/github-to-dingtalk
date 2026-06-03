@@ -65,3 +65,59 @@ def test_issue_empty_body():
     msg = handler.build_message()
     assert msg.title == "Issue"
     assert "No body" in msg.text
+
+
+def test_issue_closed_no_body():
+    payload = {
+        **PAYLOAD_BASE,
+        "action": "closed",
+        "issue": {
+            "html_url": "https://github.com/octocat/Hello-World/issues/1",
+            "number": 1,
+            "title": "Found a bug",
+            "body": "Steps to reproduce...",
+        },
+    }
+    handler = IssueHandler(payload)
+    msg = handler.build_message()
+    assert msg.title == "Issue"
+    assert "#1 Found a bug" in msg.text
+    assert "Steps to reproduce" not in msg.text
+
+
+def test_issue_labeled():
+    payload = {
+        **PAYLOAD_BASE,
+        "action": "labeled",
+        "issue": {
+            "html_url": "https://github.com/octocat/Hello-World/issues/1",
+            "number": 1,
+            "title": "Found a bug",
+            "body": "Steps to reproduce...",
+        },
+        "label": {"name": "bug"},
+    }
+    handler = IssueHandler(payload)
+    msg = handler.build_message()
+    assert msg.title == "Issue"
+    assert "Label: **bug**" in msg.text
+    assert "Steps to reproduce" not in msg.text
+
+
+def test_issue_typed():
+    payload = {
+        **PAYLOAD_BASE,
+        "action": "typed",
+        "issue": {
+            "html_url": "https://github.com/octocat/Hello-World/issues/1",
+            "number": 1,
+            "title": "Found a bug",
+            "body": "Steps to reproduce...",
+        },
+        "type": {"name": "Bug"},
+    }
+    handler = IssueHandler(payload)
+    msg = handler.build_message()
+    assert msg.title == "Issue"
+    assert "Type: **Bug**" in msg.text
+    assert "Steps to reproduce" not in msg.text

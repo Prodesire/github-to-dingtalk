@@ -10,12 +10,18 @@ class MilestoneHandler(BaseHandler):
         open_issues = milestone["open_issues"]
         closed_issues = milestone["closed_issues"]
 
+        header = (
+            f"{self.md_sender} {self.action} milestone"
+            f" [{title}]({url}) in {self.md_repo}\n\n"
+            f"Open: {open_issues} / Closed: {closed_issues}"
+        )
+
+        if self.action == "created":
+            detail = f"\n\n> {description}" if description else ""
+        else:
+            detail = ""
+
         return Message(
             title="Milestone",
-            text=(
-                f"{self.md_sender} {self.action} milestone"
-                f" [{title}]({url}) in {self.md_repo}\n\n"
-                f"> {description}\n\n"
-                f"Open: {open_issues} / Closed: {closed_issues}"
-            ),
+            text=header + detail,
         )

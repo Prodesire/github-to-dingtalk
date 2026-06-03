@@ -38,12 +38,30 @@ class PullRequestHandler(BaseHandler):
             )
 
         pr_url = pr["html_url"]
+        header = (
+            f"{self.md_sender} has {self.action} a pull request"
+            f" {self.action_prep} {self.md_repo}\n\n"
+            f"[#{pr_number} {pr_title}]({pr_url})"
+        )
+
+        if self.action == "opened":
+            detail = f"\n\n> {pr_body}" if pr_body else ""
+        elif self.action in ("labeled", "unlabeled"):
+            label = self.payload.get("label", {})
+            label_name = label.get("name", "")
+            detail = f"\n\nLabel: **{label_name}**"
+        elif self.action in ("assigned", "unassigned"):
+            assignee = self.payload.get("assignee", {})
+            assignee_login = assignee.get("login", "")
+            detail = f"\n\nAssignee: **{assignee_login}**"
+        elif self.action == "review_requested":
+            reviewer = self.payload.get("requested_reviewer", {})
+            reviewer_login = reviewer.get("login", "")
+            detail = f"\n\nReviewer: **{reviewer_login}**"
+        else:
+            detail = ""
+
         return Message(
             title="Pull Request",
-            text=(
-                f"{self.md_sender} has {self.action} a pull request"
-                f" {self.action_prep} {self.md_repo}\n\n"
-                f"[#{pr_number} {pr_title}]({pr_url})\n\n"
-                f"> {pr_body}"
-            ),
+            text=header + detail,
         )

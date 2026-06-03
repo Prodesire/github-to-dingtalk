@@ -87,3 +87,78 @@ def test_pull_request_empty_body():
     msg = handler.build_message()
     assert msg.title == "Pull Request"
     assert "Empty PR" in msg.text
+
+
+def test_pull_request_closed_no_body():
+    payload = {
+        **PAYLOAD_BASE,
+        "action": "closed",
+        "pull_request": {
+            "html_url": "https://github.com/octocat/Hello-World/pull/1",
+            "number": 1,
+            "title": "Fix bug",
+            "body": "This fixes the bug",
+        },
+    }
+    handler = PullRequestHandler(payload)
+    msg = handler.build_message()
+    assert msg.title == "Pull Request"
+    assert "#1 Fix bug" in msg.text
+    assert "This fixes the bug" not in msg.text
+
+
+def test_pull_request_labeled():
+    payload = {
+        **PAYLOAD_BASE,
+        "action": "labeled",
+        "pull_request": {
+            "html_url": "https://github.com/octocat/Hello-World/pull/1",
+            "number": 1,
+            "title": "Fix bug",
+            "body": "This fixes the bug",
+        },
+        "label": {"name": "enhancement"},
+    }
+    handler = PullRequestHandler(payload)
+    msg = handler.build_message()
+    assert msg.title == "Pull Request"
+    assert "Label: **enhancement**" in msg.text
+    assert "This fixes the bug" not in msg.text
+
+
+def test_pull_request_assigned():
+    payload = {
+        **PAYLOAD_BASE,
+        "action": "assigned",
+        "pull_request": {
+            "html_url": "https://github.com/octocat/Hello-World/pull/1",
+            "number": 1,
+            "title": "Fix bug",
+            "body": "This fixes the bug",
+        },
+        "assignee": {"login": "dev1"},
+    }
+    handler = PullRequestHandler(payload)
+    msg = handler.build_message()
+    assert msg.title == "Pull Request"
+    assert "Assignee: **dev1**" in msg.text
+    assert "This fixes the bug" not in msg.text
+
+
+def test_pull_request_review_requested():
+    payload = {
+        **PAYLOAD_BASE,
+        "action": "review_requested",
+        "pull_request": {
+            "html_url": "https://github.com/octocat/Hello-World/pull/1",
+            "number": 1,
+            "title": "Fix bug",
+            "body": "This fixes the bug",
+        },
+        "requested_reviewer": {"login": "reviewer1"},
+    }
+    handler = PullRequestHandler(payload)
+    msg = handler.build_message()
+    assert msg.title == "Pull Request"
+    assert "Reviewer: **reviewer1**" in msg.text
+    assert "This fixes the bug" not in msg.text
