@@ -1,6 +1,14 @@
+import logging
 from unittest.mock import MagicMock, patch
 
-from github_to_dingtalk.config import AppConfig, DingTalkGroupConfig, RouteConfig
+import pytest
+
+from github_to_dingtalk.config import (
+    AppConfig,
+    DingTalkGroupConfig,
+    MentionConfig,
+    RouteConfig,
+)
 from github_to_dingtalk.notifier import DingTalkNotifier
 
 REPO_FIELDS = {
@@ -17,6 +25,7 @@ SENDER_FIELDS = {"login": "octocat", "html_url": "https://github.com/octocat"}
 def _make_config(
     routes: list[RouteConfig],
     default_group: str | None = None,
+    mentions: MentionConfig | None = None,
 ) -> AppConfig:
     return AppConfig(
         dingtalk_groups={
@@ -25,6 +34,7 @@ def _make_config(
         },
         routes=routes,
         default_group=default_group,
+        mentions=mentions or MentionConfig(),
     )
 
 
@@ -157,3 +167,307 @@ def test_notify_unrouted_event(mock_bot_cls: MagicMock):
     }
     notifier.notify(payload, "star")
     mock_bot_cls.assert_not_called()
+
+
+@patch("github_to_dingtalk.notifier.DingtalkChatbot")
+def test_notify_mentions_issue_assignee_when_enabled(mock_bot_cls: MagicMock):
+    mock_bot = MagicMock()
+    mock_bot_cls.return_value = mock_bot
+
+    config = _make_config(
+        routes=[
+            RouteConfig(
+                repo="octocat/Hello-World",
+                events=["issues.assigned"],
+                groups=["g1"],
+            ),
+        ],
+        mentions=MentionConfig(
+            issue_assignees=True,
+            github_to_dingtalk_ids={"dev1": "DINGTALK_USER_DEV1"},
+        ),
+    )
+    notifier = DingTalkNotifier(config)
+    payload = {
+        "sender": SENDER_FIELDS,
+        "repository": REPO_FIELDS,
+        "action": "assigned",
+        "issue": {
+            "html_url": "https://github.com/octocat/Hello-World/issues/1",
+            "number": 1,
+            "title": "Found a bug",
+            "body": "body",
+        },
+        "assignee": {"login": "dev1"},
+    }
+    notifier.notify(payload, "issues")
+    call_kwargs = mock_bot.send_markdown.call_args[1]
+    assert call_kwargs["at_dingtalk_ids"] == ["DINGTALK_USER_DEV1"]
+    assert '<font color="#0089ff">@DINGTALK_USER_DEV1</font>' in call_kwargs["text"]
+    assert "Assignee: **dev1**" not in call_kwargs["text"]
+    assert "Please handle:" not in call_kwargs["text"]
+
+
+@patch("github_to_dingtalk.notifier.DingtalkChatbot")
+def test_notify_mentions_pull_request_assignee_when_enabled(
+    mock_bot_cls: MagicMock,
+):
+    mock_bot = MagicMock()
+    mock_bot_cls.return_value = mock_bot
+
+    config = _make_config(
+        routes=[
+            RouteConfig(
+                repo="octocat/Hello-World",
+                events=["pull_request.assigned"],
+                groups=["g1"],
+            ),
+        ],
+        mentions=MentionConfig(
+            pull_request_assignees=True,
+            github_to_dingtalk_ids={"dev1": "DINGTALK_USER_DEV1"},
+        ),
+    )
+    notifier = DingTalkNotifier(config)
+    payload = {
+        "sender": SENDER_FIELDS,
+        "repository": REPO_FIELDS,
+        "action": "assigned",
+        "pull_request": {
+            "html_url": "https://github.com/octocat/Hello-World/pull/1",
+            "number": 1,
+            "title": "Fix bug",
+            "body": "body",
+        },
+        "assignee": {"login": "dev1"},
+    }
+    notifier.notify(payload, "pull_request")
+    call_kwargs = mock_bot.send_markdown.call_args[1]
+    assert call_kwargs["at_dingtalk_ids"] == ["DINGTALK_USER_DEV1"]
+    assert '<font color="#0089ff">@DINGTALK_USER_DEV1</font>' in call_kwargs["text"]
+    assert "Assignee: **dev1**" not in call_kwargs["text"]
+    assert "Please handle:" not in call_kwargs["text"]
+
+
+@patch("github_to_dingtalk.notifier.DingtalkChatbot")
+def test_notify_mentions_pull_request_reviewer_when_enabled(
+    mock_bot_cls: MagicMock,
+):
+    mock_bot = MagicMock()
+    mock_bot_cls.return_value = mock_bot
+
+    config = _make_config(
+        routes=[
+            RouteConfig(
+                repo="octocat/Hello-World",
+                events=["pull_request.review_requested"],
+                groups=["g1"],
+            ),
+        ],
+        mentions=MentionConfig(
+            pull_request_reviewers=True,
+            github_to_dingtalk_ids={"reviewer1": "DINGTALK_USER_REVIEWER1"},
+        ),
+    )
+    notifier = DingTalkNotifier(config)
+    payload = {
+        "sender": SENDER_FIELDS,
+        "repository": REPO_FIELDS,
+        "action": "review_requested",
+        "pull_request": {
+            "html_url": "https://github.com/octocat/Hello-World/pull/1",
+            "number": 1,
+            "title": "Fix bug",
+            "body": "body",
+        },
+        "requested_reviewer": {"login": "reviewer1"},
+    }
+    notifier.notify(payload, "pull_request")
+    call_kwargs = mock_bot.send_markdown.call_args[1]
+    assert call_kwargs["at_dingtalk_ids"] == ["DINGTALK_USER_REVIEWER1"]
+    assert (
+        '<font color="#0089ff">@DINGTALK_USER_REVIEWER1</font>' in call_kwargs["text"]
+    )
+    assert "Reviewer: **reviewer1**" not in call_kwargs["text"]
+    assert "Please handle:" not in call_kwargs["text"]
+
+
+@patch("github_to_dingtalk.notifier.DingtalkChatbot")
+def test_notify_does_not_mention_when_disabled(mock_bot_cls: MagicMock):
+    mock_bot = MagicMock()
+    mock_bot_cls.return_value = mock_bot
+
+    config = _make_config(
+        routes=[
+            RouteConfig(
+                repo="octocat/Hello-World",
+                events=["issues.assigned"],
+                groups=["g1"],
+            ),
+        ],
+        mentions=MentionConfig(
+            issue_assignees=False,
+            github_to_dingtalk_ids={"dev1": "DINGTALK_USER_DEV1"},
+        ),
+    )
+    notifier = DingTalkNotifier(config)
+    payload = {
+        "sender": SENDER_FIELDS,
+        "repository": REPO_FIELDS,
+        "action": "assigned",
+        "issue": {
+            "html_url": "https://github.com/octocat/Hello-World/issues/1",
+            "number": 1,
+            "title": "Found a bug",
+            "body": "body",
+        },
+        "assignee": {"login": "dev1"},
+    }
+    notifier.notify(payload, "issues")
+    call_kwargs = mock_bot.send_markdown.call_args[1]
+    assert call_kwargs["at_dingtalk_ids"] == []
+    assert 'font color="#0089ff"' not in call_kwargs["text"]
+    assert "@DINGTALK_USER_DEV1" not in call_kwargs["text"]
+    assert "Please handle:" not in call_kwargs["text"]
+    assert "Assignee: **dev1**" in call_kwargs["text"]
+
+
+@patch("github_to_dingtalk.notifier.DingtalkChatbot")
+def test_notify_does_not_mention_unmapped_user(mock_bot_cls: MagicMock):
+    mock_bot = MagicMock()
+    mock_bot_cls.return_value = mock_bot
+
+    config = _make_config(
+        routes=[
+            RouteConfig(
+                repo="octocat/Hello-World",
+                events=["pull_request.review_requested"],
+                groups=["g1"],
+            ),
+        ],
+        mentions=MentionConfig(
+            pull_request_reviewers=True,
+            github_to_dingtalk_ids={},
+        ),
+    )
+    notifier = DingTalkNotifier(config)
+    payload = {
+        "sender": SENDER_FIELDS,
+        "repository": REPO_FIELDS,
+        "action": "review_requested",
+        "pull_request": {
+            "html_url": "https://github.com/octocat/Hello-World/pull/1",
+            "number": 1,
+            "title": "Fix bug",
+            "body": "body",
+        },
+        "requested_reviewer": {"login": "reviewer1"},
+    }
+    notifier.notify(payload, "pull_request")
+    call_kwargs = mock_bot.send_markdown.call_args[1]
+    assert call_kwargs["at_dingtalk_ids"] == []
+    assert 'font color="#0089ff"' not in call_kwargs["text"]
+    assert "@reviewer1" not in call_kwargs["text"]
+    assert "Please handle:" not in call_kwargs["text"]
+    assert "Reviewer: **reviewer1**" in call_kwargs["text"]
+
+
+@patch("github_to_dingtalk.notifier.DingtalkChatbot")
+def test_notify_logs_mention_resolution_and_send_result(
+    mock_bot_cls: MagicMock,
+    caplog,
+):
+    mock_bot = MagicMock()
+    mock_bot.send_markdown.return_value = {"errcode": 0, "errmsg": "ok"}
+    mock_bot_cls.return_value = mock_bot
+
+    config = _make_config(
+        routes=[
+            RouteConfig(
+                repo="octocat/Hello-World",
+                events=["pull_request.review_requested"],
+                groups=["g1"],
+            ),
+        ],
+        mentions=MentionConfig(
+            pull_request_reviewers=True,
+            github_to_dingtalk_ids={"reviewer1": "$DINGTALK_REVIEWER1"},
+        ),
+    )
+    notifier = DingTalkNotifier(config)
+    payload = {
+        "sender": SENDER_FIELDS,
+        "repository": REPO_FIELDS,
+        "action": "review_requested",
+        "pull_request": {
+            "html_url": "https://github.com/octocat/Hello-World/pull/1",
+            "number": 1,
+            "title": "Fix bug",
+            "body": "body",
+        },
+        "requested_reviewer": {"login": "reviewer1"},
+    }
+
+    caplog.set_level(logging.INFO, logger="github_to_dingtalk.notifier")
+    notifier.notify(payload, "pull_request")
+
+    log_text = caplog.text
+    assert "Mention resolution:" in log_text
+    assert "event=pull_request" in log_text
+    assert "action=review_requested" in log_text
+    assert "enabled=True" in log_text
+    assert "mention_logins=['reviewer1']" in log_text
+    assert "at_dingtalk_ids=['$DINGTALK_REVIEWER1']" in log_text
+    assert "unmapped_logins=[]" in log_text
+    assert "mapping_logins=['reviewer1']" in log_text
+    assert "DingTalk send result:" in log_text
+    assert "result={'errcode': 0, 'errmsg': 'ok'}" in log_text
+
+
+@patch("github_to_dingtalk.notifier.DingtalkChatbot")
+def test_notify_logs_send_exception_with_context(mock_bot_cls: MagicMock, caplog):
+    mock_bot = MagicMock()
+    mock_bot.send_markdown.side_effect = RuntimeError("DingTalk API error")
+    mock_bot_cls.return_value = mock_bot
+
+    config = _make_config(
+        routes=[
+            RouteConfig(
+                repo="octocat/Hello-World",
+                events=["issues.assigned"],
+                groups=["g1"],
+            ),
+        ],
+        mentions=MentionConfig(
+            issue_assignees=True,
+            github_to_dingtalk_ids={"dev1": "$DINGTALK_DEV1"},
+        ),
+    )
+    notifier = DingTalkNotifier(config)
+    payload = {
+        "sender": SENDER_FIELDS,
+        "repository": REPO_FIELDS,
+        "action": "assigned",
+        "issue": {
+            "html_url": "https://github.com/octocat/Hello-World/issues/1",
+            "number": 1,
+            "title": "Found a bug",
+            "body": "body",
+        },
+        "assignee": {"login": "dev1"},
+    }
+
+    caplog.set_level(logging.ERROR, logger="github_to_dingtalk.notifier")
+    with pytest.raises(RuntimeError, match="DingTalk API error"):
+        notifier.notify(payload, "issues")
+
+    log_text = caplog.text
+    assert "DingTalk send failed:" in log_text
+    assert "repo=octocat/Hello-World" in log_text
+    assert "event=issues" in log_text
+    assert "action=assigned" in log_text
+    assert "title=Issue" in log_text
+    assert "group_index=1" in log_text
+    assert "group_count=1" in log_text
+    assert "at_dingtalk_ids=['$DINGTALK_DEV1']" in log_text
+    assert "DingTalk API error" in log_text

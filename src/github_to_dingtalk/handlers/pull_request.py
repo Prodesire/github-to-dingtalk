@@ -46,22 +46,30 @@ class PullRequestHandler(BaseHandler):
 
         if self.action == "opened":
             detail = f"\n\n> {pr_body}" if pr_body else ""
+            mention_logins = []
         elif self.action in ("labeled", "unlabeled"):
             label = self.payload.get("label", {})
             label_name = label.get("name", "")
             detail = f"\n\nLabel: **{label_name}**"
+            mention_logins = []
         elif self.action in ("assigned", "unassigned"):
             assignee = self.payload.get("assignee", {})
             assignee_login = assignee.get("login", "")
             detail = f"\n\nAssignee: **{assignee_login}**"
+            mention_logins = (
+                self._login_list(assignee) if self.action == "assigned" else []
+            )
         elif self.action == "review_requested":
             reviewer = self.payload.get("requested_reviewer", {})
             reviewer_login = reviewer.get("login", "")
             detail = f"\n\nReviewer: **{reviewer_login}**"
+            mention_logins = self._login_list(reviewer)
         else:
             detail = ""
+            mention_logins = []
 
         return Message(
             title="Pull Request",
             text=header + detail,
+            mention_logins=mention_logins,
         )

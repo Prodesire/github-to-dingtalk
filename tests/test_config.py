@@ -47,6 +47,39 @@ def test_load_config(config_file: Path):
     assert config.routes[0].events == ["issues", "pull_request"]
     assert config.routes[0].groups == ["dev-group"]
     assert config.default_group == "dev-group"
+    assert config.mentions.issue_assignees is False
+    assert config.mentions.pull_request_assignees is False
+    assert config.mentions.pull_request_reviewers is False
+    assert config.mentions.github_to_dingtalk_ids == {}
+
+
+def test_load_config_mentions(tmp_path: Path):
+    content = """\
+dingtalk_groups:
+  dev-group:
+    webhook: "https://hook"
+    secret: "SEC123"
+
+routes: []
+
+mentions:
+  issue_assignees: true
+  pull_request_assignees: true
+  pull_request_reviewers: true
+  github_to_dingtalk_ids:
+    dev1: "$DINGTALK_DEV1"
+    reviewer1: "$DINGTALK_REVIEWER1"
+"""
+    p = tmp_path / "config.yml"
+    p.write_text(content)
+    config = load_config(str(p))
+    assert config.mentions.issue_assignees is True
+    assert config.mentions.pull_request_assignees is True
+    assert config.mentions.pull_request_reviewers is True
+    assert config.mentions.github_to_dingtalk_ids == {
+        "dev1": "$DINGTALK_DEV1",
+        "reviewer1": "$DINGTALK_REVIEWER1",
+    }
 
 
 def test_load_config_no_default_group(tmp_path: Path):

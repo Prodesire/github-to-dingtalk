@@ -1,10 +1,11 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass
 class Message:
     title: str
     text: str
+    mention_logins: list[str] = field(default_factory=list)
 
 
 class BaseHandler:
@@ -29,3 +30,10 @@ class BaseHandler:
 
     def build_message(self) -> Message:
         raise NotImplementedError
+
+    def _login_list(self, *users: dict) -> list[str]:
+        return [
+            login
+            for user in users
+            if isinstance(user, dict) and (login := user.get("login"))
+        ]

@@ -39,10 +39,19 @@ class IssueHandler(BaseHandler):
             issue_type = self.payload.get("type", {})
             type_name = issue_type.get("name", "")
             detail = f"\n\nType: **{type_name}**"
+        elif self.action in ("assigned", "unassigned"):
+            assignee = self.payload.get("assignee", {})
+            assignee_login = assignee.get("login", "")
+            detail = f"\n\nAssignee: **{assignee_login}**"
         else:
             detail = ""
+
+        mention_logins = []
+        if self.action == "assigned":
+            mention_logins = self._login_list(self.payload.get("assignee", {}))
 
         return Message(
             title="Issue",
             text=header + detail,
+            mention_logins=mention_logins,
         )

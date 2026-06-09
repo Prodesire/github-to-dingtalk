@@ -3,7 +3,7 @@ import logging
 from dingtalkchatbot.chatbot import DingtalkChatbot
 
 from github_to_dingtalk.config import AppConfig
-from github_to_dingtalk.handlers.base import BaseHandler
+from github_to_dingtalk.handlers.base import BaseHandler, Message
 from github_to_dingtalk.handlers.branch_protection_rule import (
     BranchProtectionRuleHandler,
 )
@@ -125,30 +125,172 @@ HANDLER_MAP: dict[str, type[BaseHandler]] = {
 
 class DingTalkNotifier:
     def __init__(self, config: AppConfig) -> None:
+        self._config = config
         self._router = Router(config)
 
     def notify(self, payload: dict, event_type: str) -> None:
-        logger.info("Preparing notification: %s", payload)
+        repo: dict = payload.get("repository") or {}
+        sender: dict = payload.get("sender") or {}
+        issue: dict = payload.get("issue") or {}
+        pull_request: dict = payload.get("pull_request") or {}
+        assignee: dict = payload.get("assignee") or {}
+        requested_reviewer: dict = payload.get("requested_reviewer") or {}
+        repo_name: str = repo.get("full_name", "")
+        action: str | None = payload.get("action")
+        logger.info(
+            "Preparing notification: repo=%s event=%s action=%s sender=%s "
+            "issue=%s pull_request=%s assignee=%s requested_reviewer=%s",
+            repo_name,
+            event_type,
+            action,
+            sender.get("login", ""),
+            issue.get("number", ""),
+            pull_request.get("number", ""),
+            assignee.get("login", ""),
+            requested_reviewer.get("login", ""),
+        )
+        logger.debug("GitHub webhook payload: %s", payload)
         handler = self._resolve_handler(payload, event_type)
         if handler is None:
             logger.warning("No handler found for event: %s", event_type)
             return
 
-        repo: dict = payload.get("repository") or {}
-        repo_name: str = repo.get("full_name", "")
-        action: str | None = payload.get("action")
         groups = self._router.resolve(repo_name, event_type, action)
         if not groups:
             logger.info("No target groups for repo=%s event=%s", repo_name, event_type)
             return
 
-        message = handler.build_message()
-        for group in groups:
-            bot = DingtalkChatbot(group.webhook, group.secret)
-            bot.send_markdown(title=message.title, text=message.text)
+        try:
+            message = handler.build_message()
+        except Exception:
+            logger.exception(
+                "Failed to build DingTalk message: repo=%s event=%s action=%s "
+                "handler=%s",
+                repo_name,
+                event_type,
+                action,
+                type(handler).__name__,
+            )
+            raise
+        logger.info(
+            "Built DingTalk message: repo=%s event=%s action=%s title=%s "
+            "mention_logins=%s text_length=%s",
+            repo_name,
+            event_type,
+            action,
+            message.title,
+            message.mention_logins,
+            len(message.text),
+        )
+        at_dingtalk_ids = self._resolve_mention_ids(message, event_type, action)
+        text = self._format_text(message.text, at_dingtalk_ids)
+        for index, group in enumerate(groups, start=1):
+            logger.info(
+                "Sending DingTalk markdown: repo=%s event=%s action=%s title=%s "
+                "group_index=%s group_count=%s at_dingtalk_ids=%s "
+                "at_placeholder_count=%s",
+                repo_name,
+                event_type,
+                action,
+                message.title,
+                index,
+                len(groups),
+                at_dingtalk_ids,
+                len(at_dingtalk_ids),
+            )
+            try:
+                bot = DingtalkChatbot(group.webhook, group.secret)
+                result = bot.send_markdown(
+                    title=message.title,
+                    text=text,
+                    at_dingtalk_ids=at_dingtalk_ids,
+                )
+            except Exception:
+                logger.exception(
+                    "DingTalk send failed: repo=%s event=%s action=%s title=%s "
+                    "group_index=%s group_count=%s at_dingtalk_ids=%s "
+                    "at_placeholder_count=%s",
+                    repo_name,
+                    event_type,
+                    action,
+                    message.title,
+                    index,
+                    len(groups),
+                    at_dingtalk_ids,
+                    len(at_dingtalk_ids),
+                )
+                raise
+            logger.info(
+                "DingTalk send result: repo=%s event=%s action=%s title=%s "
+                "at_dingtalk_ids=%s result=%s",
+                repo_name,
+                event_type,
+                action,
+                message.title,
+                at_dingtalk_ids,
+                result,
+            )
 
     def _resolve_handler(self, payload: dict, event_type: str) -> BaseHandler | None:
         handler_cls = HANDLER_MAP.get(event_type)
         if handler_cls is not None:
             return handler_cls(payload)
         return GenericHandler(payload, event_type)
+
+    def _resolve_mention_ids(
+        self, message: Message, event_type: str, action: str | None
+    ) -> list[str]:
+        enabled = self._mentions_enabled(event_type, action)
+        mapping = self._config.mentions.github_to_dingtalk_ids
+        mention_ids: list[str] = []
+        unmapped_logins: list[str] = []
+        seen: set[str] = set()
+        if enabled:
+            for login in message.mention_logins:
+                dingtalk_id = mapping.get(login)
+                if dingtalk_id:
+                    if dingtalk_id not in seen:
+                        seen.add(dingtalk_id)
+                        mention_ids.append(dingtalk_id)
+                else:
+                    unmapped_logins.append(login)
+        logger.info(
+            "Mention resolution: event=%s action=%s enabled=%s "
+            "mention_logins=%s at_dingtalk_ids=%s unmapped_logins=%s "
+            "mapping_size=%s mapping_logins=%s",
+            event_type,
+            action,
+            enabled,
+            message.mention_logins,
+            mention_ids,
+            unmapped_logins,
+            len(mapping),
+            sorted(mapping),
+        )
+        return mention_ids
+
+    def _mentions_enabled(self, event_type: str, action: str | None) -> bool:
+        mentions = self._config.mentions
+        if event_type == "issues" and action == "assigned":
+            return mentions.issue_assignees
+        if event_type == "pull_request" and action == "assigned":
+            return mentions.pull_request_assignees
+        if event_type == "pull_request" and action == "review_requested":
+            return mentions.pull_request_reviewers
+        return False
+
+    def _format_text(self, text: str, at_dingtalk_ids: list[str]) -> str:
+        if not at_dingtalk_ids:
+            return text
+        text = self._remove_mention_detail(text)
+        placeholders = " ".join(
+            f'<font color="#0089ff">@{dingtalk_id}</font>'
+            for dingtalk_id in at_dingtalk_ids
+        )
+        return f"{text}\n\n{placeholders}"
+
+    def _remove_mention_detail(self, text: str) -> str:
+        lines = text.splitlines()
+        removable_prefixes = ("Assignee: **", "Reviewer: **")
+        kept_lines = [line for line in lines if not line.startswith(removable_prefixes)]
+        return "\n".join(kept_lines).rstrip()

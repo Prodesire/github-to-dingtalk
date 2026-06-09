@@ -6,6 +6,7 @@
 
 - 不同事件路由到不同钉钉群
 - 支持 `event.action` 路由（如 `release.published`）
+- 为 issue assignees、PR assignees 和 PR reviewers @ 映射的钉钉用户
 - 基于 YAML 配置，支持多群组
 - 部署到阿里云函数计算
 
@@ -36,8 +37,19 @@ routes:
     events: ["release.released"]
     groups: ["release-group"]
 
+mentions:
+  issue_assignees: true
+  pull_request_assignees: true
+  pull_request_reviewers: true
+  github_to_dingtalk_ids:
+    dev1: "DINGTALK_USER_ID_OF_DEV1"
+    reviewer1: "DINGTALK_USER_ID_OF_REVIEWER1"
+
 # default_group: "dev-group"
 ```
+
+`mentions.github_to_dingtalk_ids` 用于配置 GitHub login 到钉钉用户 ID
+的映射。未配置映射的 GitHub 用户仍会正常发送通知，但不会 @ 该用户。
 
 3. 安装 [Serverless Devs](https://docs.serverless-devs.com/)（`s` 命令行工具），部署到阿里云函数计算：
 

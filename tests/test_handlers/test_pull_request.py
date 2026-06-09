@@ -142,6 +142,7 @@ def test_pull_request_assigned():
     msg = handler.build_message()
     assert msg.title == "Pull Request"
     assert "Assignee: **dev1**" in msg.text
+    assert msg.mention_logins == ["dev1"]
     assert "This fixes the bug" not in msg.text
 
 
@@ -161,4 +162,5 @@ def test_pull_request_review_requested():
     msg = handler.build_message()
     assert msg.title == "Pull Request"
     assert "Reviewer: **reviewer1**" in msg.text
+    assert msg.mention_logins == ["reviewer1"]
     assert "This fixes the bug" not in msg.text

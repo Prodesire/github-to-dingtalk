@@ -8,6 +8,7 @@ Forward GitHub webhook events to DingTalk group chat.
 
 - Route different events to different DingTalk groups
 - Support `event.action` routing (e.g., `release.published`)
+- @ mapped DingTalk users for issue assignees, PR assignees, and PR reviewers
 - YAML-based configuration with multi-group support
 - Deploy to Alibaba Cloud Function Compute
 
@@ -38,8 +39,20 @@ routes:
     events: ["release.released"]
     groups: ["release-group"]
 
+mentions:
+  issue_assignees: true
+  pull_request_assignees: true
+  pull_request_reviewers: true
+  github_to_dingtalk_ids:
+    dev1: "DINGTALK_USER_ID_OF_DEV1"
+    reviewer1: "DINGTALK_USER_ID_OF_REVIEWER1"
+
 # default_group: "dev-group"
 ```
+
+`mentions.github_to_dingtalk_ids` maps GitHub login names to DingTalk user IDs.
+If a GitHub user is not mapped, the notification is still sent without @mentioning
+that user.
 
 3. Install [Serverless Devs](https://docs.serverless-devs.com/) (`s` CLI) and deploy to Alibaba Cloud FC:
 

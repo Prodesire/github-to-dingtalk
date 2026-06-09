@@ -33,7 +33,7 @@ routes:
     return p
 
 
-def test_webhook_success(config_file: Path):
+def test_webhook_success(config_file: Path, caplog):
     with patch.dict("os.environ", {"CONFIG_PATH": str(config_file)}):
         from github_to_dingtalk.app import app
 
@@ -52,6 +52,7 @@ def test_webhook_success(config_file: Path):
                 "body": "body",
             },
         }
+        caplog.set_level("INFO", logger="github_to_dingtalk.app")
         response = client.post(
             "/",
             json=payload,
@@ -60,9 +61,17 @@ def test_webhook_success(config_file: Path):
         assert response.status_code == 200
         assert response.json() == {"success": True}
         mock_notifier.notify.assert_called_once_with(payload, "pull_request")
+        assert (
+            "Received GitHub webhook: event=pull_request delivery= action=opened "
+            "repo=octocat/Hello-World sender=octocat issue= pull_request=1"
+        ) in caplog.text
+        assert (
+            "Handled GitHub webhook: event=pull_request delivery= action=opened "
+            "repo=octocat/Hello-World"
+        ) in caplog.text
 
 
-def test_webhook_notify_error(config_file: Path):
+def test_webhook_notify_error(config_file: Path, caplog):
     with patch.dict("os.environ", {"CONFIG_PATH": str(config_file)}):
         from github_to_dingtalk.app import app
 
@@ -76,6 +85,7 @@ def test_webhook_notify_error(config_file: Path):
             "repository": REPO_FIELDS,
             "action": "opened",
         }
+        caplog.set_level("ERROR", logger="github_to_dingtalk.app")
         response = client.post(
             "/",
             json=payload,
@@ -84,6 +94,11 @@ def test_webhook_notify_error(config_file: Path):
         assert response.status_code == 500
         assert response.json()["success"] is False
         assert "DingTalk API error" in response.json()["message"]
+        assert (
+            "Failed to handle GitHub webhook: event=issues delivery= action=opened "
+            "repo=octocat/Hello-World sender=octocat issue= pull_request="
+        ) in caplog.text
+        assert "DingTalk API error" in caplog.text
 
 
 def test_webhook_missing_event_header(config_file: Path):

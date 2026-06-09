@@ -104,6 +104,26 @@ def test_issue_labeled():
     assert "Steps to reproduce" not in msg.text
 
 
+def test_issue_assigned_mentions_assignee():
+    payload = {
+        **PAYLOAD_BASE,
+        "action": "assigned",
+        "issue": {
+            "html_url": "https://github.com/octocat/Hello-World/issues/1",
+            "number": 1,
+            "title": "Found a bug",
+            "body": "Steps to reproduce...",
+        },
+        "assignee": {"login": "dev1"},
+    }
+    handler = IssueHandler(payload)
+    msg = handler.build_message()
+    assert msg.title == "Issue"
+    assert "Assignee: **dev1**" in msg.text
+    assert msg.mention_logins == ["dev1"]
+    assert "Steps to reproduce" not in msg.text
+
+
 def test_issue_typed():
     payload = {
         **PAYLOAD_BASE,

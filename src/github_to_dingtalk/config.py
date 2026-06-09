@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 import yaml
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class DingTalkGroupConfig(BaseModel):
@@ -16,10 +16,18 @@ class RouteConfig(BaseModel):
     groups: list[str]
 
 
+class MentionConfig(BaseModel):
+    issue_assignees: bool = False
+    pull_request_assignees: bool = False
+    pull_request_reviewers: bool = False
+    github_to_dingtalk_ids: dict[str, str] = Field(default_factory=dict)
+
+
 class AppConfig(BaseModel):
     dingtalk_groups: dict[str, DingTalkGroupConfig]
     routes: list[RouteConfig]
     default_group: str | None = None
+    mentions: MentionConfig = Field(default_factory=MentionConfig)
 
 
 def load_config(path: str | None = None) -> AppConfig:

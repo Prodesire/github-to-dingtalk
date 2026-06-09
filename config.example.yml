@@ -14,6 +14,16 @@ routes:
     events: ["release"]
     groups: ["release-group"]
 
+mentions:
+  # Whether to @ the mapped DingTalk user when these GitHub events happen.
+  issue_assignees: false
+  pull_request_assignees: false
+  pull_request_reviewers: false
+  # GitHub login -> DingTalk user ID.
+  github_to_dingtalk_ids:
+    dev1: "DINGTALK_USER_ID_OF_DEV1"
+    reviewer1: "DINGTALK_USER_ID_OF_REVIEWER1"
+
 # Optional: events not matching any route are sent to this group.
 # If not set, unmatched events are discarded.
 # default_group: "dev-group"
