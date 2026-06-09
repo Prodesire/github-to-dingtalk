@@ -12,6 +12,7 @@ class IssueHandler(BaseHandler):
         if comment:
             comment_url = comment["html_url"]
             comment_body = comment["body"] or ""
+            issue_author = issue.get("user", {})
             return Message(
                 title="Issue Comment",
                 text=(
@@ -20,6 +21,7 @@ class IssueHandler(BaseHandler):
                     f"[#{issue_number} {issue_title}]({comment_url})\n\n"
                     f"> {comment_body}"
                 ),
+                mention_logins=self._login_list(issue_author),
             )
 
         issue_url = issue["html_url"]

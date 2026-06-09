@@ -19,6 +19,7 @@ mentions:
   issue_assignees: false
   pull_request_assignees: false
   pull_request_reviewers: false
+  issue_comment_authors: false
   # GitHub login -> DingTalk user ID.
   github_to_dingtalk_ids:
     dev1: "DINGTALK_USER_ID_OF_DEV1"

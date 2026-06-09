@@ -50,6 +50,7 @@ def test_load_config(config_file: Path):
     assert config.mentions.issue_assignees is False
     assert config.mentions.pull_request_assignees is False
     assert config.mentions.pull_request_reviewers is False
+    assert config.mentions.issue_comment_authors is False
     assert config.mentions.github_to_dingtalk_ids == {}
 
 
@@ -66,6 +67,7 @@ mentions:
   issue_assignees: true
   pull_request_assignees: true
   pull_request_reviewers: true
+  issue_comment_authors: true
   github_to_dingtalk_ids:
     dev1: "$DINGTALK_DEV1"
     reviewer1: "$DINGTALK_REVIEWER1"
@@ -76,6 +78,7 @@ mentions:
     assert config.mentions.issue_assignees is True
     assert config.mentions.pull_request_assignees is True
     assert config.mentions.pull_request_reviewers is True
+    assert config.mentions.issue_comment_authors is True
     assert config.mentions.github_to_dingtalk_ids == {
         "dev1": "$DINGTALK_DEV1",
         "reviewer1": "$DINGTALK_REVIEWER1",

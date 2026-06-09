@@ -39,6 +39,7 @@ def test_issue_comment():
             "number": 1,
             "title": "Found a bug",
             "body": "Steps to reproduce...",
+            "user": {"login": "issue-author"},
         },
         "comment": {
             "html_url": "https://github.com/octocat/Hello-World/issues/1#issuecomment-1",
@@ -49,6 +50,7 @@ def test_issue_comment():
     msg = handler.build_message()
     assert msg.title == "Issue Comment"
     assert "I can reproduce this" in msg.text
+    assert msg.mention_logins == ["issue-author"]
 
 
 def test_issue_empty_body():

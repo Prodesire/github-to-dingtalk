@@ -293,6 +293,175 @@ def test_notify_mentions_pull_request_reviewer_when_enabled(
 
 
 @patch("github_to_dingtalk.notifier.DingtalkChatbot")
+def test_notify_mentions_issue_comment_author_when_enabled(mock_bot_cls: MagicMock):
+    mock_bot = MagicMock()
+    mock_bot_cls.return_value = mock_bot
+
+    config = _make_config(
+        routes=[
+            RouteConfig(
+                repo="octocat/Hello-World",
+                events=["issue_comment.created"],
+                groups=["g1"],
+            ),
+        ],
+        mentions=MentionConfig(
+            issue_comment_authors=True,
+            github_to_dingtalk_ids={"issue-author": "DINGTALK_USER_AUTHOR"},
+        ),
+    )
+    notifier = DingTalkNotifier(config)
+    payload = {
+        "sender": SENDER_FIELDS,
+        "repository": REPO_FIELDS,
+        "action": "created",
+        "issue": {
+            "html_url": "https://github.com/octocat/Hello-World/issues/1",
+            "number": 1,
+            "title": "Found a bug",
+            "body": "body",
+            "user": {"login": "issue-author"},
+        },
+        "comment": {
+            "html_url": "https://github.com/octocat/Hello-World/issues/1#issuecomment-1",
+            "body": "I can reproduce this",
+        },
+    }
+    notifier.notify(payload, "issue_comment")
+    call_kwargs = mock_bot.send_markdown.call_args[1]
+    assert call_kwargs["at_dingtalk_ids"] == ["DINGTALK_USER_AUTHOR"]
+    assert '<font color="#0089ff">@DINGTALK_USER_AUTHOR</font>' in call_kwargs["text"]
+    assert "I can reproduce this" in call_kwargs["text"]
+
+
+@patch("github_to_dingtalk.notifier.DingtalkChatbot")
+def test_notify_mentions_quoted_comment_author_when_enabled(mock_bot_cls: MagicMock):
+    mock_bot = MagicMock()
+    mock_bot_cls.return_value = mock_bot
+
+    config = _make_config(
+        routes=[
+            RouteConfig(
+                repo="octocat/Hello-World",
+                events=["issue_comment.created"],
+                groups=["g1"],
+            ),
+        ],
+        mentions=MentionConfig(
+            issue_comment_authors=True,
+            github_to_dingtalk_ids={
+                "issue-author": "DINGTALK_USER_AUTHOR",
+                "quoted-author": "DINGTALK_USER_QUOTED",
+            },
+        ),
+    )
+    payload = {
+        "sender": SENDER_FIELDS,
+        "repository": REPO_FIELDS,
+        "action": "created",
+        "issue": {
+            "html_url": "https://github.com/octocat/Hello-World/issues/1",
+            "comments_url": "https://api.github.test/repos/octocat/Hello-World/issues/1/comments",
+            "number": 1,
+            "title": "Found a bug",
+            "body": "body",
+            "user": {"login": "issue-author"},
+        },
+        "comment": {
+            "id": 20,
+            "html_url": "https://github.com/octocat/Hello-World/issues/1#issuecomment-20",
+            "body": (
+                "> Directly putting policies into iac-code is inappropriate.\n"
+                ">\n"
+                "> - Add a new `pac-aliyun` skill.\n\n"
+                "Let's do that."
+            ),
+        },
+    }
+    previous_comments = [
+        {
+            "id": 10,
+            "body": (
+                "Directly putting policies into iac-code is inappropriate.\n\n"
+                "- Add a new `pac-aliyun` skill."
+            ),
+            "user": {"login": "quoted-author"},
+        }
+    ]
+    notifier = DingTalkNotifier(
+        config,
+        issue_comments_fetcher=lambda url: previous_comments,
+    )
+
+    notifier.notify(payload, "issue_comment")
+
+    call_kwargs = mock_bot.send_markdown.call_args[1]
+    assert call_kwargs["at_dingtalk_ids"] == [
+        "DINGTALK_USER_AUTHOR",
+        "DINGTALK_USER_QUOTED",
+    ]
+    assert '<font color="#0089ff">@DINGTALK_USER_AUTHOR</font>' in call_kwargs["text"]
+    assert '<font color="#0089ff">@DINGTALK_USER_QUOTED</font>' in call_kwargs["text"]
+
+
+@patch("github_to_dingtalk.notifier.DingtalkChatbot")
+def test_notify_skips_ambiguous_quoted_comment_author(mock_bot_cls: MagicMock):
+    mock_bot = MagicMock()
+    mock_bot_cls.return_value = mock_bot
+
+    config = _make_config(
+        routes=[
+            RouteConfig(
+                repo="octocat/Hello-World",
+                events=["issue_comment.created"],
+                groups=["g1"],
+            ),
+        ],
+        mentions=MentionConfig(
+            issue_comment_authors=True,
+            github_to_dingtalk_ids={
+                "issue-author": "DINGTALK_USER_AUTHOR",
+                "first-author": "DINGTALK_USER_FIRST",
+                "second-author": "DINGTALK_USER_SECOND",
+            },
+        ),
+    )
+    payload = {
+        "sender": SENDER_FIELDS,
+        "repository": REPO_FIELDS,
+        "action": "created",
+        "issue": {
+            "comments_url": "https://api.github.test/repos/octocat/Hello-World/issues/1/comments",
+            "html_url": "https://github.com/octocat/Hello-World/issues/1",
+            "number": 1,
+            "title": "Found a bug",
+            "body": "body",
+            "user": {"login": "issue-author"},
+        },
+        "comment": {
+            "id": 20,
+            "html_url": "https://github.com/octocat/Hello-World/issues/1#issuecomment-20",
+            "body": "> Same quoted text.\n\nReplying.",
+        },
+    }
+    previous_comments = [
+        {"id": 10, "body": "Same quoted text.", "user": {"login": "first-author"}},
+        {"id": 11, "body": "Same quoted text.", "user": {"login": "second-author"}},
+    ]
+    notifier = DingTalkNotifier(
+        config,
+        issue_comments_fetcher=lambda url: previous_comments,
+    )
+
+    notifier.notify(payload, "issue_comment")
+
+    call_kwargs = mock_bot.send_markdown.call_args[1]
+    assert call_kwargs["at_dingtalk_ids"] == ["DINGTALK_USER_AUTHOR"]
+    assert "@DINGTALK_USER_FIRST" not in call_kwargs["text"]
+    assert "@DINGTALK_USER_SECOND" not in call_kwargs["text"]
+
+
+@patch("github_to_dingtalk.notifier.DingtalkChatbot")
 def test_notify_does_not_mention_when_disabled(mock_bot_cls: MagicMock):
     mock_bot = MagicMock()
     mock_bot_cls.return_value = mock_bot

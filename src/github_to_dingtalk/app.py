@@ -57,13 +57,15 @@ async def lifespan(app: FastAPI):  # type: ignore[missing-return-type]
     logger.info(
         "Loaded GitHub to DingTalk config: group_count=%s route_count=%s "
         "default_group=%s issue_assignees=%s pull_request_assignees=%s "
-        "pull_request_reviewers=%s mapped_github_logins=%s",
+        "pull_request_reviewers=%s issue_comment_authors=%s "
+        "mapped_github_logins=%s",
         len(config.dingtalk_groups),
         len(config.routes),
         config.default_group or "",
         mentions.issue_assignees,
         mentions.pull_request_assignees,
         mentions.pull_request_reviewers,
+        mentions.issue_comment_authors,
         sorted(mentions.github_to_dingtalk_ids),
     )
     yield

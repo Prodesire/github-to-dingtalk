@@ -1,4 +1,11 @@
+import json
 import logging
+import os
+import re
+from collections.abc import Callable
+from urllib.error import HTTPError, URLError
+from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
+from urllib.request import Request, urlopen
 
 from dingtalkchatbot.chatbot import DingtalkChatbot
 
@@ -66,6 +73,11 @@ from github_to_dingtalk.router import Router
 
 logger = logging.getLogger(__name__)
 
+IssueCommentsFetcher = Callable[[str], list[dict]]
+_GITHUB_API_HOST = "api.github.com"
+_MAX_ISSUE_COMMENT_PAGES = 3
+_QUOTE_LINE_RE = re.compile(r"^\s{0,3}>\s?(.*)$")
+
 HANDLER_MAP: dict[str, type[BaseHandler]] = {
     "branch_protection_rule": BranchProtectionRuleHandler,
     "check_run": CheckRunHandler,
@@ -123,10 +135,94 @@ HANDLER_MAP: dict[str, type[BaseHandler]] = {
 }
 
 
+def _fetch_issue_comments(comments_url: str) -> list[dict]:
+    parsed = urlparse(comments_url)
+    if parsed.scheme != "https" or parsed.netloc != _GITHUB_API_HOST:
+        logger.warning(
+            "Skipping issue comments fetch for non-GitHub API URL: host=%s",
+            parsed.netloc,
+        )
+        return []
+
+    comments: list[dict] = []
+    for page in range(1, _MAX_ISSUE_COMMENT_PAGES + 1):
+        page_url = _page_url(comments_url, page)
+        request = Request(
+            page_url,
+            headers=_github_api_headers(),
+        )
+        with urlopen(request, timeout=3) as response:
+            data = json.loads(response.read().decode("utf-8"))
+        if not isinstance(data, list):
+            return comments
+        comments.extend(item for item in data if isinstance(item, dict))
+        if len(data) < 100:
+            return comments
+    return comments
+
+
+def _page_url(url: str, page: int) -> str:
+    parsed = urlparse(url)
+    query = dict(parse_qsl(parsed.query, keep_blank_values=True))
+    query["per_page"] = "100"
+    query["page"] = str(page)
+    return urlunparse(parsed._replace(query=urlencode(query)))
+
+
+def _github_api_headers() -> dict[str, str]:
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "User-Agent": "github-to-dingtalk",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    return headers
+
+
+def _extract_leading_quote_text(body: str) -> str | None:
+    quote_lines: list[str] = []
+    found_quote = False
+    for line in body.splitlines():
+        match = _QUOTE_LINE_RE.match(line)
+        if match:
+            found_quote = True
+            quote_lines.append(match.group(1))
+            continue
+        if not found_quote and not line.strip():
+            continue
+        if found_quote:
+            break
+        return None
+    quote_text = "\n".join(quote_lines).strip()
+    return quote_text or None
+
+
+def _normalize_comment_text(text: str) -> str:
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    return re.sub(r"\s+", " ", " ".join(lines)).strip().casefold()
+
+
+def _dedupe(values: list[str]) -> list[str]:
+    deduped: list[str] = []
+    seen: set[str] = set()
+    for value in values:
+        if value not in seen:
+            seen.add(value)
+            deduped.append(value)
+    return deduped
+
+
 class DingTalkNotifier:
-    def __init__(self, config: AppConfig) -> None:
+    def __init__(
+        self,
+        config: AppConfig,
+        issue_comments_fetcher: IssueCommentsFetcher | None = None,
+    ) -> None:
         self._config = config
         self._router = Router(config)
+        self._issue_comments_fetcher = issue_comments_fetcher or _fetch_issue_comments
 
     def notify(self, payload: dict, event_type: str) -> None:
         repo: dict = payload.get("repository") or {}
@@ -172,6 +268,7 @@ class DingTalkNotifier:
                 type(handler).__name__,
             )
             raise
+        message = self._with_quote_reply_mentions(message, payload, event_type, action)
         logger.info(
             "Built DingTalk message: repo=%s event=%s action=%s title=%s "
             "mention_logins=%s text_length=%s",
@@ -269,6 +366,78 @@ class DingTalkNotifier:
         )
         return mention_ids
 
+    def _with_quote_reply_mentions(
+        self,
+        message: Message,
+        payload: dict,
+        event_type: str,
+        action: str | None,
+    ) -> Message:
+        if event_type != "issue_comment" or action != "created":
+            return message
+        if not self._mentions_enabled(event_type, action):
+            return message
+        if not self._config.mentions.github_to_dingtalk_ids:
+            return message
+        quote_author_logins = self._resolve_quote_reply_author_logins(payload)
+        if not quote_author_logins:
+            return message
+        message.mention_logins = _dedupe(message.mention_logins + quote_author_logins)
+        return message
+
+    def _resolve_quote_reply_author_logins(self, payload: dict) -> list[str]:
+        comment = payload.get("comment") or {}
+        quote_text = _extract_leading_quote_text(comment.get("body") or "")
+        if not quote_text:
+            return []
+
+        issue = payload.get("issue") or {}
+        comments_url = issue.get("comments_url")
+        if not comments_url:
+            logger.info("Skipping quote reply author lookup: missing comments_url")
+            return []
+
+        try:
+            comments = self._issue_comments_fetcher(comments_url)
+        except (HTTPError, URLError, TimeoutError, OSError, json.JSONDecodeError):
+            logger.exception("Failed to fetch issue comments for quote reply lookup")
+            return []
+
+        quote_norm = _normalize_comment_text(quote_text)
+        if not quote_norm:
+            return []
+
+        current_comment_id = comment.get("id")
+        matched_logins: list[str] = []
+        for candidate in comments:
+            if candidate.get("id") == current_comment_id:
+                continue
+            candidate_body = candidate.get("body") or ""
+            if quote_norm not in _normalize_comment_text(candidate_body):
+                continue
+            user = candidate.get("user") or {}
+            login = user.get("login")
+            if login:
+                matched_logins.append(login)
+
+        matched_logins = _dedupe(matched_logins)
+        if len(matched_logins) > 1:
+            logger.info(
+                "Skipping ambiguous quote reply author lookup: comment_id=%s "
+                "matched_logins=%s",
+                current_comment_id,
+                matched_logins,
+            )
+            return []
+
+        if matched_logins:
+            logger.info(
+                "Resolved quote reply author logins: comment_id=%s logins=%s",
+                current_comment_id,
+                matched_logins,
+            )
+        return matched_logins
+
     def _mentions_enabled(self, event_type: str, action: str | None) -> bool:
         mentions = self._config.mentions
         if event_type == "issues" and action == "assigned":
@@ -277,6 +446,8 @@ class DingTalkNotifier:
             return mentions.pull_request_assignees
         if event_type == "pull_request" and action == "review_requested":
             return mentions.pull_request_reviewers
+        if event_type == "issue_comment" and action == "created":
+            return mentions.issue_comment_authors
         return False
 
     def _format_text(self, text: str, at_dingtalk_ids: list[str]) -> str:

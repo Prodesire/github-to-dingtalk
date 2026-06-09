@@ -43,6 +43,7 @@ mentions:
   issue_assignees: true
   pull_request_assignees: true
   pull_request_reviewers: true
+  issue_comment_authors: true
   github_to_dingtalk_ids:
     dev1: "DINGTALK_USER_ID_OF_DEV1"
     reviewer1: "DINGTALK_USER_ID_OF_REVIEWER1"
@@ -53,6 +54,8 @@ mentions:
 `mentions.github_to_dingtalk_ids` maps GitHub login names to DingTalk user IDs.
 If a GitHub user is not mapped, the notification is still sent without @mentioning
 that user.
+For `issue_comment.created`, `issue_comment_authors` mentions the issue/PR
+author and, on best-effort quote replies, the quoted comment author.
 
 3. Install [Serverless Devs](https://docs.serverless-devs.com/) (`s` CLI) and deploy to Alibaba Cloud FC:
 

@@ -20,6 +20,7 @@ class MentionConfig(BaseModel):
     issue_assignees: bool = False
     pull_request_assignees: bool = False
     pull_request_reviewers: bool = False
+    issue_comment_authors: bool = False
     github_to_dingtalk_ids: dict[str, str] = Field(default_factory=dict)
 
 
