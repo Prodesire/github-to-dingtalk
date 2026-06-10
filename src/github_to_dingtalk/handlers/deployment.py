@@ -13,6 +13,6 @@ class DeploymentHandler(BaseHandler):
             text=(
                 f"{self.md_sender} created deployment to **{environment}**"
                 f" from `{ref}` in {self.md_repo}\n\n"
-                f"> {description}"
+                f"{description}"
             ),
         )

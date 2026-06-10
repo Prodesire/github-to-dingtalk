@@ -335,6 +335,110 @@ def test_notify_mentions_issue_comment_author_when_enabled(mock_bot_cls: MagicMo
 
 
 @patch("github_to_dingtalk.notifier.DingtalkChatbot")
+def test_notify_issue_comment_skips_self_mention_and_mentions_body_login(
+    mock_bot_cls: MagicMock,
+):
+    mock_bot = MagicMock()
+    mock_bot_cls.return_value = mock_bot
+
+    config = _make_config(
+        routes=[
+            RouteConfig(
+                repo="octocat/Hello-World",
+                events=["issue_comment.created"],
+                groups=["g1"],
+            ),
+        ],
+        mentions=MentionConfig(
+            issue_comment_authors=True,
+            github_to_dingtalk_ids={
+                "xiao201208": "DINGTALK_USER_XIAO",
+                "Prodesire": "DINGTALK_USER_PRODESIRE",
+            },
+        ),
+    )
+    notifier = DingTalkNotifier(config)
+    payload = {
+        "sender": {
+            "login": "xiao201208",
+            "html_url": "https://github.com/xiao201208",
+        },
+        "repository": REPO_FIELDS,
+        "action": "created",
+        "issue": {
+            "html_url": "https://github.com/octocat/Hello-World/issues/1",
+            "number": 1,
+            "title": "Found a bug",
+            "body": "body",
+            "user": {"login": "xiao201208"},
+        },
+        "comment": {
+            "html_url": "https://github.com/octocat/Hello-World/issues/1#issuecomment-1",
+            "body": "@Prodesire thanks for the clear direction.",
+        },
+    }
+    notifier.notify(payload, "issue_comment")
+    call_kwargs = mock_bot.send_markdown.call_args[1]
+    assert call_kwargs["at_dingtalk_ids"] == ["DINGTALK_USER_PRODESIRE"]
+    assert (
+        '<font color="#0089ff">@DINGTALK_USER_PRODESIRE</font>' in call_kwargs["text"]
+    )
+    assert "DINGTALK_USER_XIAO" not in call_kwargs["text"]
+
+
+@patch("github_to_dingtalk.notifier.DingtalkChatbot")
+def test_notify_pull_request_review_comment_mentions_body_login_when_enabled(
+    mock_bot_cls: MagicMock,
+):
+    mock_bot = MagicMock()
+    mock_bot_cls.return_value = mock_bot
+
+    config = _make_config(
+        routes=[
+            RouteConfig(
+                repo="octocat/Hello-World",
+                events=["pull_request_review_comment.created"],
+                groups=["g1"],
+            ),
+        ],
+        mentions=MentionConfig(
+            issue_comment_authors=True,
+            github_to_dingtalk_ids={
+                "pr-author": "DINGTALK_USER_AUTHOR",
+                "Prodesire": "DINGTALK_USER_PRODESIRE",
+            },
+        ),
+    )
+    notifier = DingTalkNotifier(config)
+    payload = {
+        "sender": SENDER_FIELDS,
+        "repository": REPO_FIELDS,
+        "action": "created",
+        "pull_request": {
+            "html_url": "https://github.com/octocat/Hello-World/pull/1",
+            "number": 1,
+            "title": "Fix bug",
+            "body": "body",
+            "user": {"login": "pr-author"},
+        },
+        "comment": {
+            "html_url": "https://github.com/octocat/Hello-World/pull/1#discussion_r1",
+            "body": "@Prodesire please take a look",
+        },
+    }
+    notifier.notify(payload, "pull_request_review_comment")
+    call_kwargs = mock_bot.send_markdown.call_args[1]
+    assert call_kwargs["at_dingtalk_ids"] == [
+        "DINGTALK_USER_AUTHOR",
+        "DINGTALK_USER_PRODESIRE",
+    ]
+    assert '<font color="#0089ff">@DINGTALK_USER_AUTHOR</font>' in call_kwargs["text"]
+    assert (
+        '<font color="#0089ff">@DINGTALK_USER_PRODESIRE</font>' in call_kwargs["text"]
+    )
+
+
+@patch("github_to_dingtalk.notifier.DingtalkChatbot")
 def test_notify_mentions_quoted_comment_author_when_enabled(mock_bot_cls: MagicMock):
     mock_bot = MagicMock()
     mock_bot_cls.return_value = mock_bot

@@ -14,7 +14,7 @@ class DeploymentStatusHandler(BaseHandler):
             text=(
                 f"Deployment to **{environment}** is **{state}**"
                 f" in {self.md_repo}\n\n"
-                f"> {description}\n\n"
+                f"{description}\n\n"
                 f"[Details]({target_url})"
             ),
         )

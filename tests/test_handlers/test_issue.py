@@ -53,6 +53,54 @@ def test_issue_comment():
     assert msg.mention_logins == ["issue-author"]
 
 
+def test_issue_comment_does_not_mention_sender_when_sender_is_issue_author():
+    payload = {
+        **PAYLOAD_BASE,
+        "sender": {
+            "login": "issue-author",
+            "html_url": "https://github.com/issue-author",
+        },
+        "action": "created",
+        "issue": {
+            "html_url": "https://github.com/octocat/Hello-World/issues/1",
+            "number": 1,
+            "title": "Found a bug",
+            "body": "Steps to reproduce...",
+            "user": {"login": "issue-author"},
+        },
+        "comment": {
+            "html_url": "https://github.com/octocat/Hello-World/issues/1#issuecomment-1",
+            "body": "I can reproduce this",
+        },
+    }
+    handler = IssueHandler(payload)
+    msg = handler.build_message()
+    assert msg.title == "Issue Comment"
+    assert msg.mention_logins == []
+
+
+def test_issue_comment_mentions_users_from_comment_body():
+    payload = {
+        **PAYLOAD_BASE,
+        "action": "created",
+        "issue": {
+            "html_url": "https://github.com/octocat/Hello-World/issues/1",
+            "number": 1,
+            "title": "Found a bug",
+            "body": "Steps to reproduce...",
+            "user": {"login": "issue-author"},
+        },
+        "comment": {
+            "html_url": "https://github.com/octocat/Hello-World/issues/1#issuecomment-1",
+            "body": "@Prodesire and @issue-author please take a look",
+        },
+    }
+    handler = IssueHandler(payload)
+    msg = handler.build_message()
+    assert msg.title == "Issue Comment"
+    assert msg.mention_logins == ["issue-author", "Prodesire"]
+
+
 def test_issue_empty_body():
     payload = {
         **PAYLOAD_BASE,

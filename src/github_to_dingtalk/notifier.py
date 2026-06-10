@@ -446,7 +446,9 @@ class DingTalkNotifier:
             return mentions.pull_request_assignees
         if event_type == "pull_request" and action == "review_requested":
             return mentions.pull_request_reviewers
-        if event_type == "issue_comment" and action == "created":
+        if event_type in ("issue_comment", "pull_request_review_comment") and (
+            action == "created"
+        ):
             return mentions.issue_comment_authors
         return False
 

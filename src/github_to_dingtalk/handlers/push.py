@@ -27,7 +27,7 @@ class PushHandler(BaseHandler):
                 f"{self.md_sender} has pushed commit(s)"
                 f" {self.action_prep} {self.md_repo}\n\n"
                 f"[#{commit_id}]({commit_url})\n\n"
-                f"> {commit_message}\n\n"
+                f"{commit_message}\n\n"
                 f"{md_file_changes}"
             ),
         )

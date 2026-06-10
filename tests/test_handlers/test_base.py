@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from github_to_dingtalk.handlers.base import BaseHandler, Message
 
 
@@ -74,3 +76,14 @@ def test_base_handler_missing_sender_and_repo():
     assert handler.repo_full_name is None
     assert handler.md_sender == "[None](None)"
     assert handler.md_repo == "[None](None)"
+
+
+def test_handlers_do_not_prefix_message_body_as_markdown_quote():
+    handlers_dir = Path(__file__).parents[2] / "src" / "github_to_dingtalk" / "handlers"
+    offenders = []
+    for path in handlers_dir.glob("*.py"):
+        for line_no, line in enumerate(path.read_text().splitlines(), start=1):
+            if '"> {' in line:
+                offenders.append(f"{path.name}:{line_no}:{line.strip()}")
+
+    assert offenders == []

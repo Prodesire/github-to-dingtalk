@@ -10,7 +10,7 @@ class ProjectsV2Handler(BaseHandler):
         header = f"{self.md_sender} {self.action} project **{title}** in {self.md_repo}"
 
         if self.action == "created":
-            detail = f"\n\n> {short_description}" if short_description else ""
+            detail = f"\n\n{short_description}" if short_description else ""
         else:
             detail = ""
 

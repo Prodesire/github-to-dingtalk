@@ -18,7 +18,7 @@ class DiscussionHandler(BaseHandler):
                     f"{self.md_sender} has {self.action} a discussion comment"
                     f" {self.action_prep} {self.md_repo}\n\n"
                     f"[#{discussion_number} {discussion_title}]({comment_url})\n\n"
-                    f"> {comment_body}"
+                    f"{comment_body}"
                 ),
             )
 
@@ -30,7 +30,7 @@ class DiscussionHandler(BaseHandler):
         )
 
         if self.action == "created":
-            detail = f"\n\n> {discussion_body}" if discussion_body else ""
+            detail = f"\n\n{discussion_body}" if discussion_body else ""
         elif self.action in ("labeled", "unlabeled"):
             label = self.payload.get("label", {})
             label_name = label.get("name", "")

@@ -73,6 +73,54 @@ def test_pull_request_review_comment():
     assert "Nit: rename this" in msg.text
 
 
+def test_pull_request_review_comment_does_not_mention_sender_when_sender_is_author():
+    payload = {
+        **PAYLOAD_BASE,
+        "sender": {
+            "login": "pr-author",
+            "html_url": "https://github.com/pr-author",
+        },
+        "action": "created",
+        "pull_request": {
+            "html_url": "https://github.com/octocat/Hello-World/pull/1",
+            "number": 1,
+            "title": "Fix bug",
+            "body": "body",
+            "user": {"login": "pr-author"},
+        },
+        "comment": {
+            "html_url": "https://github.com/octocat/Hello-World/pull/1#discussion_r1",
+            "body": "Nit: rename this",
+        },
+    }
+    handler = PullRequestHandler(payload)
+    msg = handler.build_message()
+    assert msg.title == "Pull Request Review Comment"
+    assert msg.mention_logins == []
+
+
+def test_pull_request_review_comment_mentions_users_from_comment_body():
+    payload = {
+        **PAYLOAD_BASE,
+        "action": "created",
+        "pull_request": {
+            "html_url": "https://github.com/octocat/Hello-World/pull/1",
+            "number": 1,
+            "title": "Fix bug",
+            "body": "body",
+            "user": {"login": "pr-author"},
+        },
+        "comment": {
+            "html_url": "https://github.com/octocat/Hello-World/pull/1#discussion_r1",
+            "body": "@Prodesire and @pr-author please take a look",
+        },
+    }
+    handler = PullRequestHandler(payload)
+    msg = handler.build_message()
+    assert msg.title == "Pull Request Review Comment"
+    assert msg.mention_logins == ["pr-author", "Prodesire"]
+
+
 def test_pull_request_empty_body():
     payload = {
         **PAYLOAD_BASE,

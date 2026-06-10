@@ -20,20 +20,25 @@ class PullRequestHandler(BaseHandler):
                     f"{self.md_sender} has {self.action} a pull request review"
                     f" {self.action_prep} {self.md_repo}\n\n"
                     f"[#{pr_number} {pr_title}]({review_url})\n\n"
-                    f"> {review_body}"
+                    f"{review_body}"
                 ),
             )
 
         if comment:
             comment_url = comment["html_url"]
             comment_body = comment["body"] or ""
+            pr_author = pr.get("user", {})
             return Message(
                 title="Pull Request Review Comment",
                 text=(
                     f"{self.md_sender} has {self.action} a pull request review comment"
                     f" {self.action_prep} {self.md_repo}\n\n"
                     f"[#{pr_number} {pr_title}]({comment_url})\n\n"
-                    f"> {comment_body}"
+                    f"{comment_body}"
+                ),
+                mention_logins=self._comment_mention_logins(
+                    comment_body,
+                    pr_author,
                 ),
             )
 
@@ -45,7 +50,7 @@ class PullRequestHandler(BaseHandler):
         )
 
         if self.action == "opened":
-            detail = f"\n\n> {pr_body}" if pr_body else ""
+            detail = f"\n\n{pr_body}" if pr_body else ""
             mention_logins = []
         elif self.action in ("labeled", "unlabeled"):
             label = self.payload.get("label", {})

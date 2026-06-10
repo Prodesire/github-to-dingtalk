@@ -19,9 +19,12 @@ class IssueHandler(BaseHandler):
                     f"{self.md_sender} has {self.action} an issue comment"
                     f" {self.action_prep} {self.md_repo}\n\n"
                     f"[#{issue_number} {issue_title}]({comment_url})\n\n"
-                    f"> {comment_body}"
+                    f"{comment_body}"
                 ),
-                mention_logins=self._login_list(issue_author),
+                mention_logins=self._comment_mention_logins(
+                    comment_body,
+                    issue_author,
+                ),
             )
 
         issue_url = issue["html_url"]
@@ -32,7 +35,7 @@ class IssueHandler(BaseHandler):
         )
 
         if self.action == "opened":
-            detail = f"\n\n> {issue_body}" if issue_body else ""
+            detail = f"\n\n{issue_body}" if issue_body else ""
         elif self.action in ("labeled", "unlabeled"):
             label = self.payload.get("label", {})
             label_name = label.get("name", "")

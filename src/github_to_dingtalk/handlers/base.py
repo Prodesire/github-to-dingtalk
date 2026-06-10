@@ -1,4 +1,9 @@
+import re
 from dataclasses import dataclass, field
+
+_MENTION_RE = re.compile(
+    r"(?<![A-Za-z0-9_-])@([A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?)"
+)
 
 
 @dataclass
@@ -37,3 +42,29 @@ class BaseHandler:
             for user in users
             if isinstance(user, dict) and (login := user.get("login"))
         ]
+
+    def _comment_mention_logins(self, body: str, *default_users: dict) -> list[str]:
+        return self._dedupe_logins(
+            [
+                *self._login_list(*default_users),
+                *self._body_mention_logins(body),
+            ],
+            exclude={self.sender_login} if self.sender_login else set(),
+        )
+
+    def _body_mention_logins(self, body: str) -> list[str]:
+        return [match.group(1) for match in _MENTION_RE.finditer(body)]
+
+    def _dedupe_logins(
+        self, logins: list[str], exclude: set[str] | None = None
+    ) -> list[str]:
+        excluded = {login.casefold() for login in exclude or set()}
+        deduped: list[str] = []
+        seen: set[str] = set()
+        for login in logins:
+            login_key = login.casefold()
+            if login_key in excluded or login_key in seen:
+                continue
+            seen.add(login_key)
+            deduped.append(login)
+        return deduped

@@ -14,6 +14,6 @@ class CommitCommentHandler(BaseHandler):
                 f"{self.md_sender} commented on commit"
                 f" `{commit_id[:7]}` in {self.md_repo}\n\n"
                 f"[View comment]({comment_url})\n\n"
-                f"> {comment_body}"
+                f"{comment_body}"
             ),
         )

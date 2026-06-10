@@ -15,7 +15,7 @@ class StatusHandler(BaseHandler):
                 f"Commit status **{state}** for"
                 f" `{sha[:7]}` in {self.md_repo}\n\n"
                 f"Context: {context}\n\n"
-                f"> {description}\n\n"
+                f"{description}\n\n"
                 f"[Details]({target_url})"
             ),
         )

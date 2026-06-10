@@ -17,7 +17,7 @@ class MilestoneHandler(BaseHandler):
         )
 
         if self.action == "created":
-            detail = f"\n\n> {description}" if description else ""
+            detail = f"\n\n{description}" if description else ""
         else:
             detail = ""
 
