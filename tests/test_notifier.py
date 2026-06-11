@@ -170,6 +170,43 @@ def test_notify_unrouted_event(mock_bot_cls: MagicMock):
 
 
 @patch("github_to_dingtalk.notifier.DingtalkChatbot")
+def test_notify_mentions_issue_author_when_closed(mock_bot_cls: MagicMock):
+    mock_bot = MagicMock()
+    mock_bot_cls.return_value = mock_bot
+
+    config = _make_config(
+        routes=[
+            RouteConfig(
+                repo="octocat/Hello-World",
+                events=["issues.closed"],
+                groups=["g1"],
+            ),
+        ],
+        mentions=MentionConfig(
+            issue_authors=True,
+            github_to_dingtalk_ids={"issue-author": "DINGTALK_USER_AUTHOR"},
+        ),
+    )
+    notifier = DingTalkNotifier(config)
+    payload = {
+        "sender": SENDER_FIELDS,
+        "repository": REPO_FIELDS,
+        "action": "closed",
+        "issue": {
+            "html_url": "https://github.com/octocat/Hello-World/issues/1",
+            "number": 1,
+            "title": "Found a bug",
+            "body": "body",
+            "user": {"login": "issue-author"},
+        },
+    }
+    notifier.notify(payload, "issues")
+    call_kwargs = mock_bot.send_markdown.call_args[1]
+    assert call_kwargs["at_dingtalk_ids"] == ["DINGTALK_USER_AUTHOR"]
+    assert '<font color="#0089ff">@DINGTALK_USER_AUTHOR</font>' in call_kwargs["text"]
+
+
+@patch("github_to_dingtalk.notifier.DingtalkChatbot")
 def test_notify_mentions_issue_assignee_when_enabled(mock_bot_cls: MagicMock):
     mock_bot = MagicMock()
     mock_bot_cls.return_value = mock_bot

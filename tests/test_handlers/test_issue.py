@@ -126,6 +126,7 @@ def test_issue_closed_no_body():
             "number": 1,
             "title": "Found a bug",
             "body": "Steps to reproduce...",
+            "user": {"login": "issue-author"},
         },
     }
     handler = IssueHandler(payload)
@@ -133,6 +134,7 @@ def test_issue_closed_no_body():
     assert msg.title == "Issue"
     assert "#1 Found a bug" in msg.text
     assert "Steps to reproduce" not in msg.text
+    assert msg.mention_logins == ["issue-author"]
 
 
 def test_issue_labeled():

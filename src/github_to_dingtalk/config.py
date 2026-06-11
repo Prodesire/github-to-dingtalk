@@ -17,6 +17,7 @@ class RouteConfig(BaseModel):
 
 
 class MentionConfig(BaseModel):
+    issue_authors: bool = False
     issue_assignees: bool = False
     pull_request_assignees: bool = False
     pull_request_reviewers: bool = False

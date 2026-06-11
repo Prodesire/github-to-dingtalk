@@ -16,6 +16,7 @@ routes:
 
 mentions:
   # Whether to @ the mapped DingTalk user when these GitHub events happen.
+  issue_authors: false
   issue_assignees: false
   pull_request_assignees: false
   pull_request_reviewers: false

@@ -54,6 +54,8 @@ class IssueHandler(BaseHandler):
         mention_logins = []
         if self.action == "assigned":
             mention_logins = self._login_list(self.payload.get("assignee", {}))
+        elif self.action == "closed":
+            mention_logins = self._login_list(issue.get("user", {}))
 
         return Message(
             title="Issue",

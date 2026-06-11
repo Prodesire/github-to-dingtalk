@@ -440,6 +440,8 @@ class DingTalkNotifier:
 
     def _mentions_enabled(self, event_type: str, action: str | None) -> bool:
         mentions = self._config.mentions
+        if event_type == "issues" and action == "closed":
+            return mentions.issue_authors
         if event_type == "issues" and action == "assigned":
             return mentions.issue_assignees
         if event_type == "pull_request" and action == "assigned":
